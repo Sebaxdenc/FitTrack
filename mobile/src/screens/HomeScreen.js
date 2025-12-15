@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { testFile } from '../services/storage';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const { width } = Dimensions.get('window');
@@ -53,6 +54,11 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.headerTitle}>Weekly Schedule</Text>
                 <View style={styles.grid}>
+
+                    <Pressable onPress={() => {testFile()}} style={styles.cardContainer}>
+                        <Text style={styles.card}>Test Storage</Text>
+                    </Pressable>
+
                     {DAYS.map((day, index) => {
                         const isToday = day === today;
                         const isLastWorkout = day === lastWorkoutDay;
