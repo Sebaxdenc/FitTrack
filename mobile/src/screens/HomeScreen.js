@@ -55,7 +55,7 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.headerTitle}>Weekly Schedule</Text>
                 <View style={styles.grid}>
 
-                    <Pressable onPress={() => {testFile()}} style={styles.cardContainer}>
+                    <Pressable onPress={testFile} style={styles.cardContainer}>
                         <Text style={styles.card}>Test Storage</Text>
                     </Pressable>
 

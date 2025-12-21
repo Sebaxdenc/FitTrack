@@ -3,8 +3,7 @@ import { Platform } from 'react-native';
 
 // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
 // If running on physical device, replace wconst API_URL = 'https://your-backend-url.onrender.com'; // Placeholder for now
-const API_URL = Platform.OS === 'android' ? 'http://192.168.1.213:5000' : 'http://localhost:5000';
-
+const API_URL = 'https://gymappexpo.onrender.com'
 const api = axios.create({
     baseURL: API_URL,
     headers: {
