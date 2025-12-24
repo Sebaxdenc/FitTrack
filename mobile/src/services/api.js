@@ -30,7 +30,7 @@ export const createExercise = (data) => {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
-export const updateExercise = (id, data) => {
+export const updateOnlineExercise = (id, data) => {
     // Similar to create, but PUT
     // For simplicity, let's assume same structure
     const formData = new FormData();

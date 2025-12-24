@@ -13,23 +13,6 @@ const sampleExercise = {
 const DIR_NAME = 'GymApp'
 const EXER_FILE_NAME = 'exercises.json'
 
-export async function testFile() {
-
-    console.log("------------------")
-
-    //Crea un ejercicio de manera local
-    await addExercise(sampleExercise)
-    //Verificar     
-    console.log('Ejercicio antes de la sincronizacion: ', JSON.stringify(await getLocalExercises(), undefined, 1))
-
-    //Sincroniso los storages
-    await syncStorages()
-    //Verifico
-    console.log('Ejercicio depues de la sincronizacion: ', JSON.stringify(await getLocalExercises(), undefined, 1))
-
-
-}
-
 async function syncStorages() {
     try {
         const exercises = await getLocalExercises()
@@ -48,9 +31,12 @@ async function syncStorages() {
             .then(async(data) => {
 
                 const newExercises = data.map((fetchData)=>{
+                    if(!fetchData.data){
+                        return fetchData
+                    }
                     return fetchData.data
                 })
-
+                
                 await saveLocalExercises(newExercises)
             })
             .catch((error)=>{
@@ -78,7 +64,7 @@ async function getExerFile() {
             return []
         }
         exerFile = directory.createFile(EXER_FILE_NAME, 'Application/jso')
-        
+
         return exerFile
     } catch (e) {
         console.error('Error getting the exerFile: ', e)
@@ -106,6 +92,13 @@ async function getLocalExercises() {
 
         const decoder = new TextDecoder('utf-8')
         const bytes = await exerFile.bytes()
+
+        //Archivo vacio
+        if(bytes.length === 0){
+            await saveLocalExercises([sampleExercise])
+            return [sampleExercise]
+        }
+
 
         const exercises = JSON.parse(decoder.decode(bytes), undefined, 0)
 
@@ -153,7 +146,24 @@ export async function addExercise(exercise) {
 
 }
 
-
+//Hacer que los ejercicios se puedan pedir sin conexion
 export async function getExercises() {
-    return await fetchExercises()
+    try{
+
+        const response = await fetchExercises()
+        
+        if(response.status !== 200){
+            throw new Error(`Status erro ${response.status}`)            
+        }
+        
+        await syncStorages()   
+
+        return response.data
+        
+    }catch(e){  
+        //Pedir los ejercicios desde el almacenamiento local
+        const exercises = await getLocalExercises()
+        
+        return exercises
+    }
 }

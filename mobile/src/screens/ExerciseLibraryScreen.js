@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Button, FlatList, Image, TouchableOpacity, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getExercises } from '../services/api';
+import { getExercises } from '../services/storage';
 
 const ExerciseLibraryScreen = ({ navigation }) => {
     const [exercises, setExercises] = useState([]);
 
     const fetchExercises = async () => {
         try {
-            const response = await getExercises();
-            setExercises(response.data);
+            const exercises = await getExercises();
+            setExercises(exercises);
         } catch (error) {
             console.error(error);
         }
@@ -42,6 +42,7 @@ const ExerciseLibraryScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <Button title="Add New Exercise" onPress={() => navigation.navigate('ExerciseForm')} />
+            <Button title="Test" onPress={getExercises}/>
             <FlatList
                 data={exercises}
                 keyExtractor={(item) => item._id}

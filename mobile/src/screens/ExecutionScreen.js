@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Button, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
 
+//TODO: Si todos los set de todos los ejercicios fueron completado entonces cambiar "lastWorkoutDay"
 const ExecutionScreen = ({ route, navigation }) => {
   const { routine } = route.params;
 
@@ -57,6 +58,7 @@ const ExecutionScreen = ({ route, navigation }) => {
     setTimer(restDuration);
     setIsResting(true);
   };
+  
 
   const skipRest = () => {
     setIsResting(false);

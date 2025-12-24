@@ -4,13 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
-import { testFile } from '../services/storage';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 60) / 2;
 
 const HomeScreen = ({ navigation }) => {
+    //TODO: Setear el last Workout Day cuando se entre a esta pagina por primera vez
     const [lastWorkoutDay, setLastWorkoutDay] = useState(null);
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
@@ -54,10 +54,6 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.headerTitle}>Weekly Schedule</Text>
                 <View style={styles.grid}>
-
-                    <Pressable onPress={testFile} style={styles.cardContainer}>
-                        <Text style={styles.card}>Test Storage</Text>
-                    </Pressable>
 
                     {DAYS.map((day, index) => {
                         const isToday = day === today;
