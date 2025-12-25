@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { createExercise, updateExercise } from '../services/api';
+import { addExercise, createImagecopy, deletImage, test } from '../services/storage';
+
 
 const ExerciseFormScreen = ({ route, navigation }) => {
     const exerciseToEdit = route.params?.exercise;
@@ -11,16 +13,17 @@ const ExerciseFormScreen = ({ route, navigation }) => {
     const [defaultSets, setDefaultSets] = useState(exerciseToEdit?.defaultSets?.toString() || '3');
     const [defaultWeight, setDefaultWeight] = useState(exerciseToEdit?.defaultWeight || '');
     const [restTime, setRestTime] = useState(exerciseToEdit?.restTime?.toString() || '60');
-    const [image, setImage] = useState(exerciseToEdit?.image ? `http://192.168.1.213:5000/${exerciseToEdit.image}` : null);
+    const [image, setImage] = useState(exerciseToEdit?.image ? exerciseToEdit.image : null);
     const [localImageUri, setLocalImageUri] = useState(null); // For new uploads
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
         });
+
 
         if (!result.canceled) {
             setLocalImageUri(result.assets[0].uri);
@@ -28,11 +31,22 @@ const ExerciseFormScreen = ({ route, navigation }) => {
         }
     };
 
+    const test = async() => {
+        console.log(localImageUri)
+        const localUri = await createImagecopy(localImageUri)
+    }
+
+
     const handleSave = async () => {
         if (!name) {
             Alert.alert('Error', 'Name is required');
             return;
         }
+
+        //Crea una copia de la imagen en el almacenamiento de la aplicacion
+        //Y guarda la ruta al almacenamiento local
+        const uriImage = await createImagecopy(localImageUri)
+        console.log(uriImage)
 
         const data = {
             name,
@@ -41,14 +55,15 @@ const ExerciseFormScreen = ({ route, navigation }) => {
             defaultSets: parseInt(defaultSets),
             defaultWeight,
             restTime: parseInt(restTime),
-            image: localImageUri, // Only send if changed
+            image: uriImage,
         };
 
         try {
             if (exerciseToEdit) {
+                //TODO: Esta funcion deberia poder hacer actualizaciones sin internet y cuando se posible subirlas
                 await updateExercise(exerciseToEdit._id, data);
             } else {
-                await createExercise(data);
+                await addExercise(data);
             }
             navigation.goBack();
         } catch (error) {
@@ -84,6 +99,7 @@ const ExerciseFormScreen = ({ route, navigation }) => {
 
             <View style={styles.buttonContainer}>
                 <Button title="Save Exercise" onPress={handleSave} />
+                <Button title="Test" onPress={test} />
             </View>
         </ScrollView>
     );

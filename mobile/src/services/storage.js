@@ -11,39 +11,21 @@ const sampleExercise = {
 }
 
 const DIR_NAME = 'GymApp'
+const IMAGES_DIR_NAME = 'Images'
 const EXER_FILE_NAME = 'exercises.json'
+const STORAGE_PATH = Paths.cache
 
 async function syncStorages() {
     try {
         const exercises = await getLocalExercises()
 
-        const promisesArr = exercises.map(async(exercise) => {
-
+        exercises.forEach(async (exercise) => {
             if (!exercise._id) {
-                const onlineExercise = await createExercise(exercise)
-                return onlineExercise
+                await createExercise(exercise)
             }
-            return exercise
         })
-
-
-        await Promise.all(promisesArr)
-            .then(async(data) => {
-
-                const newExercises = data.map((fetchData)=>{
-                    if(!fetchData.data){
-                        return fetchData
-                    }
-                    return fetchData.data
-                })
-                
-                await saveLocalExercises(newExercises)
-            })
-            .catch((error)=>{
-                console.error(error)
-                throw new Error(error)
-            })
-
+        const response = await fetchExercises()
+        await saveLocalExercises(response.data)
 
     } catch (e) {
         console.error('A problem has occurred syncing the storages', e)
@@ -53,7 +35,7 @@ async function syncStorages() {
 async function getExerFile() {
 
     try {
-        const directory = new Directory(Paths.cache, DIR_NAME)
+        const directory = new Directory(STORAGE_PATH, DIR_NAME)
         let exerFile;
 
         if (!directory.exists) {
@@ -63,7 +45,7 @@ async function getExerFile() {
             exerFile.write(jsonString)
             return []
         }
-        exerFile = directory.createFile(EXER_FILE_NAME, 'Application/jso')
+        exerFile = directory.createFile(EXER_FILE_NAME, 'Application/json')
 
         return exerFile
     } catch (e) {
@@ -89,12 +71,11 @@ async function saveLocalExercises(newExercises) {
 async function getLocalExercises() {
     try {
         const exerFile = await getExerFile()
-
         const decoder = new TextDecoder('utf-8')
         const bytes = await exerFile.bytes()
 
         //Archivo vacio
-        if(bytes.length === 0){
+        if (bytes.length === 0) {
             await saveLocalExercises([sampleExercise])
             return [sampleExercise]
         }
@@ -139,7 +120,7 @@ export async function addExercise(exercise) {
         console.error('Error creating the online exercise: ', e)
     }
 
-    console.warn('Agregando de manera manual el ejercicio')
+    console.warn('Agregando el ejercicio localmente')
 
     exercises.push(exercise)
     await saveLocalExercises(exercises)
@@ -148,22 +129,85 @@ export async function addExercise(exercise) {
 
 //Hacer que los ejercicios se puedan pedir sin conexion
 export async function getExercises() {
-    try{
+    try {
 
         const response = await fetchExercises()
-        
-        if(response.status !== 200){
-            throw new Error(`Status erro ${response.status}`)            
+
+        if (response.status !== 200) {
+            throw new Error(`Status erro ${response.status}`)
         }
-        
-        await syncStorages()   
+
+        await syncStorages()
 
         return response.data
-        
-    }catch(e){  
+
+    } catch (e) {
         //Pedir los ejercicios desde el almacenamiento local
+        console.log('Failed to fecth, local version-> ', JSON.stringify(await getLocalExercises(), undefined, 2))
         const exercises = await getLocalExercises()
-        
+
         return exercises
+    }
+}
+
+export async function createImagecopy(uri) {
+    try {
+
+        if(!uri){
+            throw new Error('Uri required')
+        }
+
+        const {dir, base} = Paths.parse(uri)
+
+        const oldDirectory = new Directory(Paths.join('file://',dir))
+        const newDirectory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
+        //TODO: Probar para ver si la creacion de archivos va hacia donde debe(Linea 177)-> const newDirectory = new Directory(Paths.join(STORAGE_PATH, IMAGES_DIR_NAME))
+        console.log(newDirectory)
+        
+        if(!oldDirectory.exists){
+            throw new Error('No existe el directorio en el cache, donde estas las imagenes seleccionadas')
+        }
+
+        if (!newDirectory.exists) {
+            newDirectory.create()
+        }
+
+        const imageFile = oldDirectory.createFile(base)
+
+        const newImageFile = newDirectory.createFile(Paths.join(IMAGES_DIR_NAME, base))
+        
+        console.log(newImageFile)
+
+
+
+    } catch (e) {
+        console.error('Error creating an image copy: ', e)
+    }
+}
+
+export async function deletImage(uri) {
+    try {
+
+
+        const {base} = Paths.parse(uri)
+
+        const directory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
+
+        if(!directory.exists){
+            directory.create()
+            throw new Error('Empty Image Directory')
+        }
+        
+        const imageFile = directory.createFile()
+        
+        if(!imageFile.exists){
+            throw new Error('The image doesnt exists')
+        }
+
+        imageFile.delete()
+
+
+    } catch (e) {
+        console.error(e)
     }
 }
