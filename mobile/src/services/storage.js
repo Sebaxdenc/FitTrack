@@ -101,7 +101,7 @@ async function getLocalExercises() {
 
 
 export async function addExercise(exercise) {
-
+    
     const exercises = await getLocalExercises()
 
     try {
@@ -160,9 +160,7 @@ export async function createImagecopy(uri) {
         const {dir, base} = Paths.parse(uri)
 
         const oldDirectory = new Directory(Paths.join('file://',dir))
-        const newDirectory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
-        //TODO: Probar para ver si la creacion de archivos va hacia donde debe(Linea 177)-> const newDirectory = new Directory(Paths.join(STORAGE_PATH, IMAGES_DIR_NAME))
-        console.log(newDirectory)
+        const newDirectory = new Directory(Paths.join(STORAGE_PATH, IMAGES_DIR_NAME))
         
         if(!oldDirectory.exists){
             throw new Error('No existe el directorio en el cache, donde estas las imagenes seleccionadas')
@@ -173,12 +171,10 @@ export async function createImagecopy(uri) {
         }
 
         const imageFile = oldDirectory.createFile(base)
-
-        const newImageFile = newDirectory.createFile(Paths.join(IMAGES_DIR_NAME, base))
         
-        console.log(newImageFile)
+        imageFile.copy(newDirectory)
 
-
+        return Paths.join(newDirectory, base)
 
     } catch (e) {
         console.error('Error creating an image copy: ', e)

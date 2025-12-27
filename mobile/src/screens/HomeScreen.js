@@ -126,12 +126,12 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f4f5f7' },
     scrollContent: { padding: 20, paddingBottom: 100 },
-    headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 32, marginBottom: 25, color: '#172b4d' },
+    headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 32, marginBottom: 25, color: '#172b4d'},
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
     cardContainer: { marginBottom: 20 },
     card: {
         width: CARD_WIDTH,
-        height: CARD_WIDTH * 1.2, // Taller cards
+        height: CARD_WIDTH * 0.8, // Taller cards
         borderRadius: 20,
         padding: 20,
         justifyContent: 'space-between',
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)'
     },
-    dayText: { fontFamily: 'Inter_700Bold', fontSize: 22, color: 'white' },
+    dayText: { fontFamily: 'Inter_700Bold', fontSize: 15, color: 'white' },
     subtitle: { fontFamily: 'Inter_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 5 },
     activeIndicator: {
         width: 8,

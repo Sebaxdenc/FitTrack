@@ -14,7 +14,6 @@ const ExerciseFormScreen = ({ route, navigation }) => {
     const [defaultWeight, setDefaultWeight] = useState(exerciseToEdit?.defaultWeight || '');
     const [restTime, setRestTime] = useState(exerciseToEdit?.restTime?.toString() || '60');
     const [image, setImage] = useState(exerciseToEdit?.image ? exerciseToEdit.image : null);
-    const [localImageUri, setLocalImageUri] = useState(null); // For new uploads
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -26,16 +25,9 @@ const ExerciseFormScreen = ({ route, navigation }) => {
 
 
         if (!result.canceled) {
-            setLocalImageUri(result.assets[0].uri);
             setImage(result.assets[0].uri);
         }
     };
-
-    const test = async() => {
-        console.log(localImageUri)
-        const localUri = await createImagecopy(localImageUri)
-    }
-
 
     const handleSave = async () => {
         if (!name) {
@@ -45,8 +37,7 @@ const ExerciseFormScreen = ({ route, navigation }) => {
 
         //Crea una copia de la imagen en el almacenamiento de la aplicacion
         //Y guarda la ruta al almacenamiento local
-        const uriImage = await createImagecopy(localImageUri)
-        console.log(uriImage)
+        const localURI = await createImagecopy(image)
 
         const data = {
             name,
@@ -55,8 +46,9 @@ const ExerciseFormScreen = ({ route, navigation }) => {
             defaultSets: parseInt(defaultSets),
             defaultWeight,
             restTime: parseInt(restTime),
-            image: uriImage,
+            image: localURI,
         };
+
 
         try {
             if (exerciseToEdit) {
@@ -99,7 +91,6 @@ const ExerciseFormScreen = ({ route, navigation }) => {
 
             <View style={styles.buttonContainer}>
                 <Button title="Save Exercise" onPress={handleSave} />
-                <Button title="Test" onPress={test} />
             </View>
         </ScrollView>
     );
