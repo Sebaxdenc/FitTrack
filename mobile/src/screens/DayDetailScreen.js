@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Image, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getRoutine, saveRoutine, getExercises } from '../services/api';
+import { getRoutine, saveRoutine, getExercises } from '../services/storage';
+
 
 const DayDetailScreen = ({ route, navigation }) => {
     const { day } = route.params;

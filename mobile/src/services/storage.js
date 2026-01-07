@@ -1,4 +1,4 @@
-import { Directory, Paths } from 'expo-file-system'
+import { Directory, Paths, File} from 'expo-file-system'
 import { createExercise, getExercises as fetchExercises } from './api';
 
 const sampleExercise = {
@@ -13,7 +13,8 @@ const sampleExercise = {
 const DIR_NAME = 'GymApp'
 const IMAGES_DIR_NAME = 'Images'
 const EXER_FILE_NAME = 'exercises.json'
-const STORAGE_PATH = Paths.cache
+const ROUTINES_FILE_NAME = 'routines.json'
+const STORAGE_PATH = Paths.document
 
 async function syncStorages() {
     try {
@@ -45,8 +46,7 @@ async function getExerFile() {
             exerFile.write(jsonString)
             return []
         }
-        exerFile = directory.createFile(EXER_FILE_NAME, 'Application/json')
-
+        exerFile = directory.createFile(EXER_FILE_NAME, 'Application/json');
         return exerFile
     } catch (e) {
         console.error('Error getting the exerFile: ', e)
@@ -101,7 +101,7 @@ async function getLocalExercises() {
 
 
 export async function addExercise(exercise) {
-    
+
     const exercises = await getLocalExercises()
 
     try {
@@ -118,13 +118,12 @@ export async function addExercise(exercise) {
 
     } catch (e) {
         console.error('Error creating the online exercise: ', e)
+
+        console.warn('Agregando el ejercicio localmente')
+
+        exercises.push(exercise)
+        await saveLocalExercises(exercises)
     }
-
-    console.warn('Agregando el ejercicio localmente')
-
-    exercises.push(exercise)
-    await saveLocalExercises(exercises)
-
 }
 
 //Hacer que los ejercicios se puedan pedir sin conexion
@@ -134,7 +133,7 @@ export async function getExercises() {
         const response = await fetchExercises()
 
         if (response.status !== 200) {
-            throw new Error(`Status erro ${response.status}`)
+            throw new Error(`Status error ${response.status}`)
         }
 
         await syncStorages()
@@ -143,38 +142,40 @@ export async function getExercises() {
 
     } catch (e) {
         //Pedir los ejercicios desde el almacenamiento local
-        console.log('Failed to fecth, local version-> ', JSON.stringify(await getLocalExercises(), undefined, 2))
+        console.warn('Failed to fecth, online version: ', e)
         const exercises = await getLocalExercises()
 
         return exercises
     }
 }
 
+
+//Esta funcion recibe 
 export async function createImagecopy(uri) {
     try {
 
-        if(!uri){
+        if (!uri) {
             throw new Error('Uri required')
         }
 
-        const {dir, base} = Paths.parse(uri)
+        const {base} = Paths.parse(uri)
 
-        const oldDirectory = new Directory(Paths.join('file://',dir))
-        const newDirectory = new Directory(Paths.join(STORAGE_PATH, IMAGES_DIR_NAME))
-        
-        if(!oldDirectory.exists){
-            throw new Error('No existe el directorio en el cache, donde estas las imagenes seleccionadas')
+        const imageFile = new File(uri)
+
+        const imagesDirectory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
+        if(!imagesDirectory.exists){
+            imagesDirectory.create()
         }
 
-        if (!newDirectory.exists) {
-            newDirectory.create()
-        }
-
-        const imageFile = oldDirectory.createFile(base)
+        const imageCopy = new File(imagesDirectory, base)
         
-        imageFile.copy(newDirectory)
-
-        return Paths.join(newDirectory, base)
+        if(!imageCopy.exists){
+            imageFile.copy(imageCopy)
+            console.log(imageCopy)
+            return imageCopy.uri
+        }
+        
+        return imageCopy.uri
 
     } catch (e) {
         console.error('Error creating an image copy: ', e)
@@ -184,19 +185,18 @@ export async function createImagecopy(uri) {
 export async function deletImage(uri) {
     try {
 
-
-        const {base} = Paths.parse(uri)
+        const { base } = Paths.parse(uri)
 
         const directory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
 
-        if(!directory.exists){
+        if (!directory.exists) {
             directory.create()
             throw new Error('Empty Image Directory')
         }
-        
+
         const imageFile = directory.createFile()
-        
-        if(!imageFile.exists){
+
+        if (!imageFile.exists) {
             throw new Error('The image doesnt exists')
         }
 

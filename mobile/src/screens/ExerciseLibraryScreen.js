@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, Image, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, Pressable } from 'react-native';
+import {Image} from 'expo-image'
 import { useFocusEffect } from '@react-navigation/native';
 import { getExercises } from '../services/storage';
 
@@ -21,31 +22,33 @@ const ExerciseLibraryScreen = ({ navigation }) => {
         }, [])
     );
 
-    const renderItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.item}
-            onPress={() => navigation.navigate('ExerciseForm', { exercise: item })}
-        >
-            {item.image && (
-                <Image
-                    source={{ uri: `http://192.168.1.213:5000/${item.image}` }}
-                    style={styles.thumbnail}
-                />
-            )}
-            <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.details}>{item.defaultSets} sets x {item.defaultReps} reps {item.defaultWeight ? `@ ${item.defaultWeight}` : ''}</Text>
-            </View>
-        </TouchableOpacity>
-    );
+    const renderItem = ({ item }) => {
+        return (
+            <TouchableOpacity
+                style={styles.item}
+                onPress={() => navigation.navigate('ExerciseForm', { exercise: item })}
+            >
+                {item.image && (
+                    <Image
+                        source={{ uri: item.image }}
+                        style={styles.thumbnail}
+                        onError={(error) => console.warn(error)}
+                    />
+                )}
+                <View style={styles.info}>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.details}>{item.defaultSets} sets x {item.defaultReps} reps {item.defaultWeight ? `@ ${item.defaultWeight}` : ''}</Text>
+                </View>
+            </TouchableOpacity>
+        )
+    }
 
     return (
         <View style={styles.container}>
             <Button title="Add New Exercise" onPress={() => navigation.navigate('ExerciseForm')} />
-            <Button title="Test" onPress={getExercises}/>
             <FlatList
                 data={exercises}
-                keyExtractor={(item) => item._id}
+                keyExtractor={(item) => item.name}
                 renderItem={renderItem}
                 contentContainerStyle={styles.list}
             />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { createExercise, updateExercise } from '../services/api';
-import { addExercise, createImagecopy, deletImage, test } from '../services/storage';
+import { addExercise, createImagecopy, deletImage } from '../services/storage';
 
 
 const ExerciseFormScreen = ({ route, navigation }) => {

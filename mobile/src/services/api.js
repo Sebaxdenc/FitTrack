@@ -2,8 +2,8 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 
 // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
-// If running on physical device, replace wconst API_URL = 'https://your-backend-url.onrender.com'; // Placeholder for now
-const API_URL = 'https://gymappexpo.onrender.com'
+// If running on physical device, replace with your computer's IP
+const API_URL = 'http://192.168.1.21:5000';
 const api = axios.create({
     baseURL: API_URL,
     headers: {
@@ -13,41 +13,25 @@ const api = axios.create({
 
 export const getExercises = () => api.get('/exercises');
 export const createExercise = (data) => {
-    const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
-    formData.append('defaultReps', String(data.defaultReps));
-    formData.append('defaultSets', String(data.defaultSets));
-    if (data.defaultWeight) formData.append('defaultWeight', data.defaultWeight);
-    if (data.restTime) formData.append('restTime', String(data.restTime));
-    if (data.image) {
-        const filename = data.image.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
-        formData.append('image', { uri: data.image, name: filename, type });
-    }
-    return api.post('/exercises', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+    return api.post('/exercises', {
+        name: data.name,
+        description: data.description,
+        image: data.image,
+        defaultReps: data.defaultReps,
+        defaultSets: data.defaultSets,
+        defaultWeight: data.defaultWeight,
+        restTime: data.restTime
     });
 };
 export const updateOnlineExercise = (id, data) => {
-    // Similar to create, but PUT
-    // For simplicity, let's assume same structure
-    const formData = new FormData();
-    if (data.name) formData.append('name', data.name);
-    if (data.description) formData.append('description', data.description);
-    if (data.defaultReps) formData.append('defaultReps', String(data.defaultReps));
-    if (data.defaultSets) formData.append('defaultSets', String(data.defaultSets));
-    if (data.defaultWeight) formData.append('defaultWeight', data.defaultWeight);
-    if (data.restTime) formData.append('restTime', String(data.restTime));
-    if (data.image) {
-        const filename = data.image.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
-        formData.append('image', { uri: data.image, name: filename, type });
-    }
-    return api.put(`/exercises/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+    return api.put(`/exercises/${id}`, {
+        name: data.name,
+        description: data.description,
+        image: data.image,
+        defaultReps: data.defaultReps,
+        defaultSets: data.defaultSets,
+        defaultWeight: data.defaultWeight,
+        restTime: data.restTime
     });
 };
 export const deleteExercise = (id) => api.delete(`/exercises/${id}`);
