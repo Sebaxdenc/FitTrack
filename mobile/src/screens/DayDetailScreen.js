@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getRoutine, saveRoutine, getExercises } from '../services/storage';
 
@@ -90,6 +90,7 @@ const DayDetailScreen = ({ route, navigation }) => {
             />
 
             <View style={styles.footer}>
+                <Button title="Test" onPress={getRoutine} />
                 <Button title="Add Exercise" onPress={() => setModalVisible(true)} />
                 <View style={{ height: 10 }} />
                 <Button

@@ -1,6 +1,6 @@
 import { Directory, Paths, File} from 'expo-file-system'
-import { createExercise, getExercises as fetchExercises } from './api';
-import {getLocalExercises, saveLocalExercises} from '../utils/fileSystem'
+import { createExercise, getExercises as fetchExercises, getRoutine as fetchRoutine } from './api';
+import {getLocalExercises, getLocalRoutines, saveLocalExercises} from '../utils/fileSystem'
 
 const sampleExercise = {
     name: "Contracciones de pecho",
@@ -34,7 +34,6 @@ async function syncStorages() {
     }
 }
 
-
 export async function addExercise(exercise) {
 
     const exercises = await getLocalExercises()
@@ -61,7 +60,6 @@ export async function addExercise(exercise) {
     }
 }
 
-
 export async function getExercises() {
     try {
 
@@ -81,6 +79,17 @@ export async function getExercises() {
         const exercises = await getLocalExercises()
 
         return exercises
+    }
+}
+
+export async function getRoutines(day){
+    try{
+        return fetchRoutine(day);
+    }catch(e){
+        // Return local routine
+        console.warn('Failed to fetch online Routine: ',e)
+        const routines = await getLocalRoutines()
+        console.log(JSON.stringify(routines, undefined, 1))
     }
 }
 
