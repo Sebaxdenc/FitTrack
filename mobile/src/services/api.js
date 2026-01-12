@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
 // If running on physical device, replace with your computer's IP
-const API_URL = 'http://192.168.1.21:5000';
+const API_URL = 'http://192.168.1.63:5000';
 const api = axios.create({
     baseURL: API_URL,
     headers: {

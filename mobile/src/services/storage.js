@@ -82,8 +82,11 @@ export async function getExercises() {
     }
 }
 
-export async function getRoutines(day){
+export async function getRoutine(day){
+    console.log('Test')
     try{
+        const response = await fetchRoutine(day)
+        console.log(JSON.stringify(response.data, undefined, 1))
         return fetchRoutine(day);
     }catch(e){
         // Return local routine

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getRoutine, saveRoutine, getExercises } from '../services/storage';
+import { Image } from 'expo-image';
 
 
 const DayDetailScreen = ({ route, navigation }) => {
@@ -75,6 +76,12 @@ const DayDetailScreen = ({ route, navigation }) => {
     const renderExerciseItem = ({ item, index }) => (
         <View style={styles.item}>
             <Text style={styles.name}>{item.exercise?.name || 'Unknown Exercise'}</Text>
+            <Image
+                source={{ uri: item.image }}
+                style={styles.image}
+                onError={(error) => console.warn(error)}
+            />
+
             <Text>{item.targetSets} sets x {item.targetReps} reps</Text>
             <Button title="Remove" onPress={() => removeExercise(index)} color="red" />
         </View>
@@ -90,7 +97,7 @@ const DayDetailScreen = ({ route, navigation }) => {
             />
 
             <View style={styles.footer}>
-                <Button title="Test" onPress={getRoutine} />
+                <Button title="Test" onPress={() => { getRoutine('Monday') }} />
                 <Button title="Add Exercise" onPress={() => setModalVisible(true)} />
                 <View style={{ height: 10 }} />
                 <Button
@@ -121,6 +128,7 @@ const DayDetailScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 20 },
+    image: { width: 40, height: 40, borderRadius: 15, backgroundColor: '#fffad0ff' },
     item: { padding: 15, backgroundColor: 'white', marginBottom: 10, borderRadius: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     name: { fontWeight: 'bold', fontSize: 16 },
     emptyText: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' },
