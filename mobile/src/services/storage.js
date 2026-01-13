@@ -1,6 +1,7 @@
-import { Directory, Paths, File} from 'expo-file-system'
-import { createExercise, getExercises as fetchExercises, getRoutine as fetchRoutine } from './api';
-import {getLocalExercises, getLocalRoutines, saveLocalExercises} from '../utils/fileSystem'
+import { Directory, Paths, File } from 'expo-file-system'
+import { createExercise, getExercises as fetchExercises, getRoutine as fetchRoutine, deleteExercise as deleteExerciseAPI, saveRoutine as saveRoutineAPI } from './api';
+import { getLocalExercises, getLocalRoutines, saveLocalExercises, deletImage, saveLocalRoutines } from '../utils/fileSystem'
+
 
 const sampleExercise = {
     name: "Contracciones de pecho",
@@ -17,7 +18,7 @@ const EXER_FILE_NAME = 'exercises.json'
 const ROUTINES_FILE_NAME = 'routines.json'
 const STORAGE_PATH = Paths.document
 
-async function syncStorages() {
+async function syncExerciseStorage() {
     try {
         const exercises = await getLocalExercises()
 
@@ -32,6 +33,14 @@ async function syncStorages() {
     } catch (e) {
         console.error('A problem has occurred syncing the storages', e)
     }
+}
+
+export async function syncRoutineStorages(){
+    const locaRoutines = await getLocalRoutines()
+    Promise.all(locaRoutines.map((routine)=>{
+        return saveRoutineAPI(routine.day, routine.exercises)
+    }))
+
 }
 
 export async function addExercise(exercise) {
@@ -69,7 +78,7 @@ export async function getExercises() {
             throw new Error(`Status error ${response.status}`)
         }
 
-        await syncStorages()
+        await syncExerciseStorage()
 
         return response.data
 
@@ -82,18 +91,85 @@ export async function getExercises() {
     }
 }
 
-export async function getRoutine(day){
-    console.log('Test')
-    try{
+export async function getRoutine(day) {
+    try {
         const response = await fetchRoutine(day)
-        console.log(JSON.stringify(response.data, undefined, 1))
         return fetchRoutine(day);
-    }catch(e){
+    } catch (e) {
         // Return local routine
-        console.warn('Failed to fetch online Routine: ',e)
+        console.warn('Failed to fetch online Routine: ', e)
         const routines = await getLocalRoutines()
-        console.log(JSON.stringify(routines, undefined, 1))
+        return routines
     }
+}
+
+export async function test() {
+    await saveRoutine('Thursday', [sampleExercise, sampleExercise])
+}
+
+export async function saveRoutine(day, exercises) {
+    try {
+        const response = await saveRoutineAPI(day, exercises)
+
+        //Guarda los cambios de manera local
+        const routines = await getLocalRoutines()
+
+        const newRoutines = routines.map((routine) => {
+            if (routine.day == day) {
+                routine.exercises = exercises
+                return routine
+            }
+            return routine
+
+        })
+
+        await saveLocalRoutines(newRoutines)
+
+
+    } catch (e) {
+
+        console.warn(`Failed to save online Routine, saving localy: `, e)
+
+        const routines = await getLocalRoutines()
+
+        const newRoutines = routines.map((routine) => {
+            if (routine.day == day) {
+                routine.exercises = exercises
+                return routine
+            }
+            return routine
+
+        })
+
+        await saveLocalRoutines(newRoutines)
+
+    }
+}
+
+export async function deleteExercise(exercise) {
+    const exercises = await getLocalExercises()
+
+    try {
+        // Intenta eliminar de la API si tiene ID
+        if (exercise._id) {
+            await deleteExerciseAPI(exercise._id)
+        }
+    } catch (e) {
+        console.warn('Failed to delete exercise from online storage: ', e)
+    }
+
+    try {
+        // Elimina la imagen si existe
+        if (exercise.image) {
+            await deletImage(exercise.image)
+        }
+    } catch (e) {
+        console.warn('Failed to delete image: ', e)
+    }
+
+    // Elimina del almacenamiento local
+    const updatedExercises = exercises.filter(ex => ex.name !== exercise.name)
+    await saveLocalExercises(updatedExercises)
 }
 
 

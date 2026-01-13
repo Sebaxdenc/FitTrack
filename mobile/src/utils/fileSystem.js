@@ -161,7 +161,6 @@ export async function createImagecopy(uri) {
         
         if(!imageCopy.exists){
             imageFile.copy(imageCopy)
-            console.log(imageCopy)
             return imageCopy.uri
         }
         
@@ -175,25 +174,15 @@ export async function createImagecopy(uri) {
 export async function deletImage(uri) {
     try {
 
-        const { base } = Paths.parse(uri)
-
-        const directory = new Directory(STORAGE_PATH, IMAGES_DIR_NAME)
-
-        if (!directory.exists) {
-            directory.create()
-            throw new Error('Empty Image Directory')
+        if (!uri) {
+            throw new Error('Uri required')
         }
 
-        const imageFile = directory.createFile()
-
-        if (!imageFile.exists) {
-            throw new Error('The image doesnt exists')
-        }
+        const imageFile = new File(uri)
 
         imageFile.delete()
 
-
     } catch (e) {
-        console.error(e)
+        console.error('Error deleting the image: ', e)
     }
 }

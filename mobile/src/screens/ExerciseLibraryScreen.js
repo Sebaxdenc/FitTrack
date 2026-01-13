@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, Pressable, Alert } from 'react-native';
 import {Image} from 'expo-image'
 import { useFocusEffect } from '@react-navigation/native';
-import { getExercises } from '../services/storage';
+import { getExercises, deleteExercise } from '../services/storage';
 
 const ExerciseLibraryScreen = ({ navigation }) => {
     const [exercises, setExercises] = useState([]);
@@ -14,6 +14,29 @@ const ExerciseLibraryScreen = ({ navigation }) => {
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const handleDeleteExercise = (exercise) => {
+        Alert.alert(
+            "Eliminar ejercicio",
+            `¿Estás seguro de que deseas eliminar "${exercise.name}"?`,
+            [
+                { text: "Cancelar", onPress: () => {}, style: "cancel" },
+                {
+                    text: "Eliminar",
+                    onPress: async () => {
+                        try {
+                            await deleteExercise(exercise);
+                            fetchExercises();
+                        } catch (error) {
+                            console.error(error);
+                            Alert.alert("Error", "No se pudo eliminar el ejercicio");
+                        }
+                    },
+                    style: "destructive"
+                }
+            ]
+        );
     };
 
     useFocusEffect(
@@ -39,6 +62,12 @@ const ExerciseLibraryScreen = ({ navigation }) => {
                     <Text style={styles.name}>{item.name}</Text>
                     <Text style={styles.details}>{item.defaultSets} sets x {item.defaultReps} reps {item.defaultWeight ? `@ ${item.defaultWeight}` : ''}</Text>
                 </View>
+                <Pressable
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteExercise(item)}
+                >
+                    <Text style={styles.deleteButtonText}>Eliminar</Text>
+                </Pressable>
             </TouchableOpacity>
         )
     }
@@ -64,6 +93,8 @@ const styles = StyleSheet.create({
     info: { flex: 1 },
     name: { fontSize: 16, fontWeight: 'bold' },
     details: { color: '#666' },
+    deleteButton: { backgroundColor: '#ff4444', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 5, justifyContent: 'center', alignItems: 'center' },
+    deleteButtonText: { color: 'white', fontSize: 14, fontWeight: 'bold' },
 });
 
 export default ExerciseLibraryScreen;

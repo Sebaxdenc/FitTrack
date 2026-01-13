@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Aler
 import { useFocusEffect } from '@react-navigation/native';
 import { getRoutine, saveRoutine, getExercises } from '../services/storage';
 import { Image } from 'expo-image';
+import { test } from '../services/storage';
 
 
 const DayDetailScreen = ({ route, navigation }) => {
@@ -12,16 +13,8 @@ const DayDetailScreen = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
 
     const fetchRoutine = async () => {
-        try {
-            const response = await getRoutine(day);
-            setRoutine(response.data || { exercises: [] });
-        } catch (error) {
-            if (error.response && error.response.status === 404) {
-                setRoutine({ exercises: [] });
-            } else {
-                console.error(error);
-            }
-        }
+        const response = await getRoutine(day);
+        setRoutine(response.data || { exercises: [] });
     };
 
     const fetchAllExercises = async () => {
@@ -97,7 +90,7 @@ const DayDetailScreen = ({ route, navigation }) => {
             />
 
             <View style={styles.footer}>
-                <Button title="Test" onPress={() => { getRoutine('Monday') }} />
+                <Button title="Test" onPress={test} />
                 <Button title="Add Exercise" onPress={() => setModalVisible(true)} />
                 <View style={{ height: 10 }} />
                 <Button
