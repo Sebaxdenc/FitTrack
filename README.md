@@ -1,22 +1,14 @@
 # FitTrack
 Aplicación para registrar tus ejercicios y comidas diarias
 
-Isa
-1. Yo como usuario de la aplicación me gustaria tener la rutina de mis ejercicios en mi celular.
-2. Yo como usuario quiero poder ver recomendaciones de implementos deportivos desde la aplicación.
-
-Samu
-1. Yo como usuario quiero poder ver  dietas y rutinas de otros usuarios.
-2. Yo como usuario quiero poder tener mi propio perfil donde guarde mis logros, ejercicios y comidas.
-
-Jeronimo
-1. Yo como usuario quiero tener objetivos diarios de quema de calorias y poder completarlos.
-2. Yo como usuario quiero poder ver comidas predeterminadas las cuales muestren información tales como las calorias.
-
-Helen
-1. Yo como usuario me gustaria tener un control de mi alimentación diaria y su gasto energetica
-2. Yo como usuario quiero poder filtrar ejercicios y comidas por el tipo de ejercicio o cuerpo que quiero
-
-Sebas
-1. Yo como usuario quiero una aplicación intuitiva e interactiva para poder tener una buena experiencia de usuario
-2. Yo como usuario quiero un ranking de los ejercicios y comidas mejor valorados
+1. Yo como usuario que se ejercita me gustaria tener la rutina de mis ejercicios en mi celular para saber exactamente qué hacer en el gimnasio sin tener que memorizarlo o llevar papeles.
+2. Yo como usuario principiante quiero poder ver recomendaciones de implementos deportivos desde la aplicación.
+3. Yo como usuario principiante quiero poder ver dietas y rutinas de otros usuarios para obtener nuevas ideas cuando me sienta estancado.
+4. Yo como usuario deportista, quiero filtrar tipos de ejercicios y comidas específicos para mi deporte, para enfocar mi entrenamiento en el rendimiento de mi disciplina.
+5. Yo como usuario orientado a metas quiero poder tener mi propio perfil donde guarde mis logros, ejercicios y comidas para visualizar mi historial y progreso acumulado.
+6. Yo como usuario interesado en la nutrición quiero tener objetivos diarios de quema de calorias para motivarme visualmente a completarlos cada día.
+7. Yo como usuario interesado en la nutrición quiero ver comidas predeterminadas con su información nutricional, para registrar lo que como rápidamente sabiendo cuántas calorías tiene.
+8. Yo como usuario interesado en la nutrición, quiero llevar un control de mi alimentación diaria y su gasto energético, para asegurar que estoy cumpliendo con mi balance calórico (déficit o superávit).
+9. Yo como usuario fitness, quiero filtrar ejercicios y comidas por el tipo de cuerpo u objetivo físico que busco, para recibir solo información relevante para mi meta estética.
+10. Yo como usuario, quiero una interfaz intuitiva e interactiva, para navegar por la aplicación sin frustraciones y tener una buena experiencia de uso.
+11. Yo como usuario, quiero ver un ranking de los ejercicios y comidas mejor valorados, para elegir las opciones que han sido más efectivas para la comunidad.
