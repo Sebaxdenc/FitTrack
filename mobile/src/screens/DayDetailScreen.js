@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Button, FlatList, Modal, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getRoutine, saveRoutine, getExercises } from '../services/storage';
+import { getRoutine, saveRoutine, getExercises} from '../services/storage';
 import { Image } from 'expo-image';
-import { test } from '../services/storage';
 
+
+const placeHolderImage = require('../../assets/placeHolder.png')
 
 const DayDetailScreen = ({ route, navigation }) => {
     const { day } = route.params;
@@ -14,13 +15,14 @@ const DayDetailScreen = ({ route, navigation }) => {
 
     const fetchRoutine = async () => {
         const response = await getRoutine(day);
-        setRoutine(response.data || { exercises: [] });
+        //TODO: Testear la funcion de getRoutine sin y con acceso al backend
+        setRoutine(response.data || response);
     };
 
     const fetchAllExercises = async () => {
         try {
-            const response = await getExercises();
-            setAllExercises(response.data);
+            const exercises = await getExercises();
+            setAllExercises(exercises);
         } catch (error) {
             console.error(error);
         }
@@ -70,7 +72,7 @@ const DayDetailScreen = ({ route, navigation }) => {
         <View style={styles.item}>
             <Text style={styles.name}>{item.exercise?.name || 'Unknown Exercise'}</Text>
             <Image
-                source={{ uri: item.image }}
+                source={item.exercise?.image || placeHolderImage}
                 style={styles.image}
                 onError={(error) => console.warn(error)}
             />
@@ -90,7 +92,6 @@ const DayDetailScreen = ({ route, navigation }) => {
             />
 
             <View style={styles.footer}>
-                <Button title="Test" onPress={test} />
                 <Button title="Add Exercise" onPress={() => setModalVisible(true)} />
                 <View style={{ height: 10 }} />
                 <Button
@@ -109,6 +110,11 @@ const DayDetailScreen = ({ route, navigation }) => {
                         renderItem={({ item }) => (
                             <TouchableOpacity style={styles.modalItem} onPress={() => addExerciseToRoutine(item)}>
                                 <Text style={styles.modalItemText}>{item.name}</Text>
+                                <Image
+                                    source={item.image || placeHolderImage}
+                                    style={{ marginStart: 30, width: 60, height: 60, borderRadius: 15 }}
+                                    onError={(error) => console.warn(error)}
+                                />
                             </TouchableOpacity>
                         )}
                     />
@@ -121,14 +127,24 @@ const DayDetailScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 20 },
-    image: { width: 40, height: 40, borderRadius: 15, backgroundColor: '#fffad0ff' },
-    item: { padding: 15, backgroundColor: 'white', marginBottom: 10, borderRadius: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    image: { width: 120, height: 60, borderRadius: 15, backgroundColor: '#fffad0ff' },
+    item: {
+        padding: 15,
+        backgroundColor: 'white', 
+        marginBottom: 10, 
+        borderRadius: 5, 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        flexWrap:'wrap',
+        rowGap: 20
+    },
     name: { fontWeight: 'bold', fontSize: 16 },
     emptyText: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' },
     footer: { marginTop: 20 },
     modalContainer: { flex: 1, padding: 20, marginTop: 50 },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-    modalItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
+    modalItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee', flexDirection: 'row', justifyContent:'space-between' },
     modalItemText: { fontSize: 18 },
 });
 

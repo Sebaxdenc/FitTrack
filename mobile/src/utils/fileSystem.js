@@ -119,7 +119,6 @@ export async function getLocalRoutines() {
             return []
         }
 
-
         return routines
     } catch (error) {
         console.error('Error reading local exercises:', error)

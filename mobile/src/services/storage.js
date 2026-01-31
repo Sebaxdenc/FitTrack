@@ -16,7 +16,7 @@ const DIR_NAME = 'GymApp'
 const IMAGES_DIR_NAME = 'Images'
 const EXER_FILE_NAME = 'exercises.json'
 const ROUTINES_FILE_NAME = 'routines.json'
-const STORAGE_PATH = Paths.document
+const STORAGE_PATH = Paths.cache
 
 async function syncExerciseStorage() {
     try {
@@ -60,9 +60,7 @@ export async function addExercise(exercise) {
         return
 
     } catch (e) {
-        console.error('Error creating the online exercise: ', e)
-
-        console.warn('Agregando el ejercicio localmente')
+        console.warn(e, 'Agregando el ejercicio localmente')
 
         exercises.push(exercise)
         await saveLocalExercises(exercises)
@@ -84,7 +82,7 @@ export async function getExercises() {
 
     } catch (e) {
         //Pedir los ejercicios desde el almacenamiento local
-        console.warn('Failed to fecth, online version: ', e)
+        console.warn('Failed to fecth, online exercises version: ', e)
         const exercises = await getLocalExercises()
 
         return exercises
@@ -93,55 +91,51 @@ export async function getExercises() {
 
 export async function getRoutine(day) {
     try {
-        const response = await fetchRoutine(day)
+        console.log('online:', JSON.stringify((await fetchRoutine(day)).data, undefined, 1))
         return fetchRoutine(day);
     } catch (e) {
         // Return local routine
-        console.warn('Failed to fetch online Routine: ', e)
-        const routines = await getLocalRoutines()
-        return routines
+        console.warn('Failed to fetch online Routine: ', e) 
+        const localRoutine = await getLocalRoutines()
+
+        console.log('Local: ',JSON.stringify(localRoutine.find((routine) => routine.day === day), undefined, 1))
+
+        return localRoutine.find((routine) => routine.day === day)
     }
 }
 
-export async function test() {
-    await saveRoutine('Thursday', [sampleExercise, sampleExercise])
-}
 
 export async function saveRoutine(day, exercises) {
     try {
-        const response = await saveRoutineAPI(day, exercises)
+
+        await saveRoutineAPI(day, exercises)
 
         //Guarda los cambios de manera local
         const routines = await getLocalRoutines()
+        const indexOfRoutine = routines.findIndex((rutina)=> rutina.day === day)
 
-        const newRoutines = routines.map((routine) => {
-            if (routine.day == day) {
-                routine.exercises = exercises
-                return routine
-            }
-            return routine
+        if(indexOfRoutine === -1){
+            routines.push({day, exercises})
+        } else {
+            routines[indexOfRoutine].exercises = exercises
+        }
 
-        })
-
-        await saveLocalRoutines(newRoutines)
-
+        await saveLocalRoutines(routines)
 
     } catch (e) {
 
         console.warn(`Failed to save online Routine, saving localy: `, e)
 
         const routines = await getLocalRoutines()
+        const indexOfRoutine = routines.findIndex((rutina)=> rutina.day === day)
 
-        const newRoutines = routines.map((routine) => {
-            if (routine.day == day) {
-                routine.exercises = exercises
-                return routine
-            }
-            return routine
+        if(indexOfRoutine === -1){
+            routines.push({day, exercises})
+        } else {
+            routines[indexOfRoutine].exercises = exercises
+        }
 
-        })
-
-        await saveLocalRoutines(newRoutines)
+        await saveLocalRoutines(routines)
 
     }
 }
