@@ -100,8 +100,8 @@ Si deseas aportar ideas, mejoras o código:
 ---
 
 ## 📄 Licencia
-
-Este proyecto se distribuye bajo una licencia abierta para fines educativos y de aprendizaje.
+Por favor leer la licencia
+[IDGAFPL](https://github.com/My2ndAngelic/IDGAFPL)
 
 ---
 
