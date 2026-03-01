@@ -87,6 +87,38 @@ Este proyecto se encuentra en una fase activa de diseño y construcción, siguie
 
 ---
 
+## 🔧 Backend (Django + Postgres + DRF)
+
+### Modelado
+- Usuarios (auth de Django)
+- Rutinas: `WorkoutRoutine` con pasos `WorkoutStep`, ejercicios `Exercise`, etiquetas `Tag`, y favoritos por usuario
+- Comidas y dietas: `Meal` (recetas individuales), `MealPlan` con ítems `MealItem`, favoritos de comidas por usuario
+
+### API principal
+- CRUD de etiquetas, ejercicios, rutinas, comidas y planes de comida
+- Filtros de visibilidad: los no autenticados solo ven contenido público; los autores ven lo propio y lo público
+- Favoritos: endpoints para marcar rutinas y comidas
+- Autenticación: Token o sesión (configurado en DRF)
+
+### Quickstart local
+1. Crea tu entorno: `python -m venv .venv && .venv\Scripts\activate`
+2. Instala dependencias: `pip install -r requirements.txt`
+3. Copia variables: `cp .env.example .env`
+4. Ejecuta migraciones: `python manage.py migrate`
+5. Arranca servidor: `python manage.py runserver`
+
+### Con Docker
+1. `cp .env.example .env`
+2. `docker compose up --build`
+3. API disponible en `http://localhost:8000/api/`
+
+### Migraciones
+Si cambias modelos: `python manage.py makemigrations workouts && python manage.py migrate`
+
+### Tests
+Pendiente agregar suite. Recomendado usar `pytest` o `manage.py test` cuando se definan.
+
+
 ## 🤝 Contribuciones
 
 Las contribuciones son bienvenidas 🙌
