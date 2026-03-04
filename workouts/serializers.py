@@ -2,239 +2,124 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (
+    Achievement,
+    DailyGoal,
+    DailyLog,
+    EquipmentRecommendation,
     Exercise,
+    ExerciseRating,
+    FavoriteExercise,
     FavoriteMeal,
-    FavoriteRoutine,
     Meal,
-    MealItem,
-    MealPlan,
-    Tag,
-    WorkoutRoutine,
-    WorkoutStep,
+    MealLog,
+    MealRating,
+    Profile,
+    Routine,
+    RoutineExercise,
+    Workout,
+    WorkoutSet,
 )
-
 
 User = get_user_model()
 
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['id', 'name']
-        read_only_fields = ['id']
+# ---------------------------------------------------
+# 👤 USER
+# ---------------------------------------------------
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email"]
+        read_only_fields = ["id", "username", "email"]
+
+
+# ---------------------------------------------------
+# 👤 PROFILE
+# ---------------------------------------------------
+
+class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = ["id", "user", "avatar_url", "bio", "updated_at"]
+        read_only_fields = ["id", "user", "updated_at"]
+
+
+# ---------------------------------------------------
+# 🏋️ EXERCISE
+# ---------------------------------------------------
 
 class ExerciseSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, required=False)
-
     class Meta:
         model = Exercise
         fields = [
-            'id',
-            'name',
-            'muscle_group',
-            'equipment',
-            'difficulty',
-            'instructions',
-            'tags',
+            "id",
+            "name",
+            "muscle_group",
+            "type",
+            "equipment",
+            "instructions",
         ]
-        read_only_fields = ['id']
-
-    def create(self, validated_data):
-        tags = validated_data.pop('tags', [])
-        exercise = Exercise.objects.create(**validated_data)
-        self._set_tags(exercise, tags)
-        return exercise
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if tags is not None:
-            self._set_tags(instance, tags)
-        return instance
-
-    def _set_tags(self, instance, tags_data):
-        tag_objs = [Tag.objects.get_or_create(name=tag['name'])[0] for tag in tags_data]
-        instance.tags.set(tag_objs)
+        read_only_fields = ["id"]
 
 
-class WorkoutStepSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorkoutStep
-        fields = ['id', 'order', 'exercise', 'sets', 'reps', 'weight_kg', 'rest_seconds']
-        read_only_fields = ['id']
-
-
-class WorkoutRoutineSerializer(serializers.ModelSerializer):
-    steps = WorkoutStepSerializer(many=True)
-    tags = TagSerializer(many=True, required=False)
-    creator = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = WorkoutRoutine
-        fields = [
-            'id',
-            'creator',
-            'title',
-            'description',
-            'duration_minutes',
-            'level',
-            'is_public',
-            'tags',
-            'steps',
-            'created_at',
-            'updated_at',
-        ]
-        read_only_fields = ['id', 'creator', 'created_at', 'updated_at']
-
-    def create(self, validated_data):
-        tags = validated_data.pop('tags', [])
-        steps = validated_data.pop('steps', [])
-        routine = WorkoutRoutine.objects.create(**validated_data)
-        self._set_tags(routine, tags)
-        self._set_steps(routine, steps)
-        return routine
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        steps = validated_data.pop('steps', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if tags is not None:
-            self._set_tags(instance, tags)
-        if steps is not None:
-            instance.steps.all().delete()
-            self._set_steps(instance, steps)
-        return instance
-
-    def validate_steps(self, value):
-        orders = [step['order'] for step in value]
-        if len(orders) != len(set(orders)):
-            raise serializers.ValidationError('Step order must be unique within a routine')
-        return value
-
-    def _set_tags(self, routine, tags_data):
-        tag_objs = [Tag.objects.get_or_create(name=tag['name'])[0] for tag in tags_data]
-        routine.tags.set(tag_objs)
-
-    def _set_steps(self, routine, steps_data):
-        steps = [WorkoutStep(routine=routine, **step) for step in steps_data]
-        WorkoutStep.objects.bulk_create(steps)
-
-
-class MealSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, required=False)
-
-    class Meta:
-        model = Meal
-        fields = [
-            'id',
-            'name',
-            'description',
-            'calories',
-            'protein_g',
-            'carbs_g',
-            'fats_g',
-            'tags',
-        ]
-        read_only_fields = ['id']
-
-    def create(self, validated_data):
-        tags = validated_data.pop('tags', [])
-        meal = Meal.objects.create(**validated_data)
-        self._set_tags(meal, tags)
-        return meal
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if tags is not None:
-            self._set_tags(instance, tags)
-        return instance
-
-    def _set_tags(self, instance, tags_data):
-        tag_objs = [Tag.objects.get_or_create(name=tag['name'])[0] for tag in tags_data]
-        instance.tags.set(tag_objs)
-
-
-class MealItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MealItem
-        fields = ['id', 'order', 'meal', 'notes']
-        read_only_fields = ['id']
-
-
-class MealPlanSerializer(serializers.ModelSerializer):
-    items = MealItemSerializer(many=True)
-    tags = TagSerializer(many=True, required=False)
-    creator = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = MealPlan
-        fields = [
-            'id',
-            'creator',
-            'title',
-            'description',
-            'is_public',
-            'tags',
-            'items',
-            'created_at',
-            'updated_at',
-        ]
-        read_only_fields = ['id', 'creator', 'created_at', 'updated_at']
-
-    def validate_items(self, value):
-        orders = [item['order'] for item in value]
-        if len(orders) != len(set(orders)):
-            raise serializers.ValidationError('Item order must be unique within a plan')
-        return value
-
-    def create(self, validated_data):
-        tags = validated_data.pop('tags', [])
-        items = validated_data.pop('items', [])
-        plan = MealPlan.objects.create(**validated_data)
-        self._set_tags(plan, tags)
-        self._set_items(plan, items)
-        return plan
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        items = validated_data.pop('items', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if tags is not None:
-            self._set_tags(instance, tags)
-        if items is not None:
-            instance.items.all().delete()
-            self._set_items(instance, items)
-        return instance
-
-    def _set_tags(self, plan, tags_data):
-        tag_objs = [Tag.objects.get_or_create(name=tag['name'])[0] for tag in tags_data]
-        plan.tags.set(tag_objs)
-
-    def _set_items(self, plan, items_data):
-        items = [MealItem(plan=plan, **item) for item in items_data]
-        MealItem.objects.bulk_create(items)
-
-
-class FavoriteRoutineSerializer(serializers.ModelSerializer):
+class ExerciseRatingSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        model = FavoriteRoutine
-        fields = ['id', 'user', 'routine', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
+        model = ExerciseRating
+        fields = ["id", "user", "exercise", "score", "comment", "created_at"]
+        read_only_fields = ["id", "user", "created_at"]
 
     def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class FavoriteExerciseSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = FavoriteExercise
+        fields = ["id", "user", "exercise", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+# ---------------------------------------------------
+# 🥗 MEAL
+# ---------------------------------------------------
+
+class MealSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meal
+        fields = [
+            "id",
+            "name",
+            "calories",
+            "carbs_g",
+            "protein_g",
+            "fat_g",
+            "is_predefined",
+        ]
+        read_only_fields = ["id"]
+
+
+class MealRatingSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = MealRating
+        fields = ["id", "user", "meal", "score", "comment", "created_at"]
+        read_only_fields = ["id", "user", "created_at"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
 
 
@@ -243,16 +128,200 @@ class FavoriteMealSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FavoriteMeal
-        fields = ['id', 'user', 'meal', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
+        fields = ["id", "user", "meal", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
 
     def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
 
 
-class UserSerializer(serializers.ModelSerializer):
+# ---------------------------------------------------
+# 📋 ROUTINES
+# ---------------------------------------------------
+
+class RoutineExerciseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
-        read_only_fields = ['id', 'username', 'email']
+        model = RoutineExercise
+        fields = [
+            "id",
+            "sort_order",
+            "exercise",
+            "target_sets",
+            "target_reps",
+            "rest_seconds",
+        ]
+        read_only_fields = ["id"]
+
+
+class RoutineSerializer(serializers.ModelSerializer):
+    exercises = RoutineExerciseSerializer(many=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Routine
+        fields = [
+            "id",
+            "user",
+            "name",
+            "goal",
+            "is_public",
+            "created_at",
+            "exercises",
+        ]
+        read_only_fields = ["id", "user", "created_at"]
+
+    def validate_exercises(self, value):
+        orders = [item["sort_order"] for item in value]
+        if len(orders) != len(set(orders)):
+            raise serializers.ValidationError(
+                "Exercise order must be unique within a routine"
+            )
+        return value
+
+    def create(self, validated_data):
+        exercises_data = validated_data.pop("exercises", [])
+        routine = Routine.objects.create(**validated_data)
+
+        routine_exercises = [
+            RoutineExercise(routine=routine, **exercise)
+            for exercise in exercises_data
+        ]
+        RoutineExercise.objects.bulk_create(routine_exercises)
+
+        return routine
+
+    def update(self, instance, validated_data):
+        exercises_data = validated_data.pop("exercises", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if exercises_data is not None:
+            instance.exercises.all().delete()
+
+            routine_exercises = [
+                RoutineExercise(routine=instance, **exercise)
+                for exercise in exercises_data
+            ]
+            RoutineExercise.objects.bulk_create(routine_exercises)
+
+        return instance
+
+
+# ---------------------------------------------------
+# 🏋️ WORKOUTS
+# ---------------------------------------------------
+
+class WorkoutSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutSet
+        fields = [
+            "id",
+            "exercise",
+            "set_number",
+            "reps",
+            "weight",
+            "rest_seconds",
+            "is_warmup",
+        ]
+        read_only_fields = ["id"]
+
+
+class WorkoutSerializer(serializers.ModelSerializer):
+    sets = WorkoutSetSerializer(many=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Workout
+        fields = [
+            "id",
+            "user",
+            "routine",
+            "started_at",
+            "duration_minutes",
+            "notes",
+            "sets",
+        ]
+        read_only_fields = ["id", "user"]
+
+    def create(self, validated_data):
+        sets_data = validated_data.pop("sets", [])
+        workout = Workout.objects.create(**validated_data)
+
+        workout_sets = [
+            WorkoutSet(workout=workout, **set_data)
+            for set_data in sets_data
+        ]
+        WorkoutSet.objects.bulk_create(workout_sets)
+
+        return workout
+
+
+# ---------------------------------------------------
+# 📊 DAILY LOGS
+# ---------------------------------------------------
+
+class MealLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealLog
+        fields = ["id", "meal", "daily_log", "eaten_at", "quantity", "meal_type"]
+        read_only_fields = ["id"]
+
+
+class DailyLogSerializer(serializers.ModelSerializer):
+    meals = MealLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DailyLog
+        fields = [
+            "id",
+            "user",
+            "log_date",
+            "total_calories_consumed",
+            "total_calories_burned",
+            "meals",
+        ]
+        read_only_fields = ["id"]
+
+
+# ---------------------------------------------------
+# 🎯 DAILY GOALS
+# ---------------------------------------------------
+
+class DailyGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyGoal
+        fields = [
+            "id",
+            "user",
+            "goal_date",
+            "burn_calories_target",
+            "burn_calories_current",
+            "completed",
+        ]
+        read_only_fields = ["id"]
+
+
+# ---------------------------------------------------
+# 🏆 ACHIEVEMENTS
+# ---------------------------------------------------
+
+class AchievementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        fields = ["id", "user", "title", "description", "achieved_at"]
+        read_only_fields = ["id", "achieved_at"]
+
+
+# ---------------------------------------------------
+# 🛒 EQUIPMENT
+# ---------------------------------------------------
+
+class EquipmentRecommendationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EquipmentRecommendation
+        fields = ["id", "name", "category", "description", "link"]
+        read_only_fields = ["id"]
