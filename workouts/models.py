@@ -1,8 +1,19 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 User = get_user_model()
+
+
+class Profile(models.Model):
+	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+	weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+	height_cm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+	def __str__(self) -> str:  # pragma: no cover - simple repr
+		return f"Profile for {self.user}"
 
 
 class TimeStampedModel(models.Model):
@@ -148,3 +159,9 @@ class FavoriteMeal(TimeStampedModel):
 
 	def __str__(self) -> str:  # pragma: no cover - simple repr
 		return f"{self.user} -> {self.meal}"
+
+
+@receiver(post_save, sender=User)
+def ensure_profile_exists(sender, instance, created, **kwargs):
+	if created:
+		Profile.objects.get_or_create(user=instance)

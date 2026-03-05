@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Acceso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c1016;
+      --panel: #161c26;
+      --muted: #9aa3b5;
+      --accent: #21e36b;
+      --accent-2: #00c4ff;
+      --card: rgba(255, 255, 255, 0.03);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(120% 120% at 20% 20%, rgba(0, 196, 255, 0.12), transparent 45%),
+                  radial-gradient(120% 120% at 80% 0%, rgba(33, 227, 107, 0.12), transparent 40%),
+                  var(--bg);
+      color: #f5f7fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 18px 48px;
+    }
+
+    .shell {
+      width: min(1200px, 100%);
+      background: linear-gradient(140deg, rgba(33, 227, 107, 0.18), rgba(12, 16, 22, 0.92));
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(6px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .logo-mark {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      background: linear-gradient(140deg, #21e36b, #00c4ff);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: #0c1016;
+      font-family: 'Space Grotesk', 'Manrope', sans-serif;
+      letter-spacing: -1px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      letter-spacing: -0.3px;
+    }
+
+    .card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: #0f141c;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: #f7f9ff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      border-color: rgba(33, 227, 107, 0.5);
+      box-shadow: 0 0 0 3px rgba(33, 227, 107, 0.18);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(120deg, #21e36b, #00c4ff);
+      color: #0c1016;
+      box-shadow: 0 10px 25px rgba(0, 196, 255, 0.25);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #f5f7fb;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .helper {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .messages {
+      margin: 8px 0 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .message {
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .message.success { border-color: rgba(33, 227, 107, 0.4); }
+    .message.error { border-color: rgba(255, 94, 94, 0.4); }
+
+    @media (max-width: 760px) {
+      body { padding: 16px; }
+      .shell { padding: 18px; }
+      .split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div class="logo-mark">FT</div>
+      <div>
+        <h1>FITtrack</h1>
+        <p class="subtitle">Organiza tus hábitos, rutinas y comidas en un solo lugar.</p>
+      </div>
+    </div>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid">
+      <section class="card">
+        <h2>Inicio de sesión</h2>
+        <p>Accede con tu usuario y vuelve a tus planes.</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="login">
+          <div>
+            <label for="{{ login_form.username.id_for_label }}">Usuario</label>
+            {{ login_form.username }}
+            {% if login_form.username.errors %}<div class="helper">{{ login_form.username.errors.0 }}</div>{% endif %}
+          </div>
+          <div>
+            <label for="{{ login_form.password.id_for_label }}">Contraseña</label>
+            {{ login_form.password }}
+            {% if login_form.password.errors %}<div class="helper">{{ login_form.password.errors.0 }}</div>{% endif %}
+          </div>
+          {% if login_form.non_field_errors %}
+            <div class="helper">{{ login_form.non_field_errors.0 }}</div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Crear nueva cuenta</h2>
+        <p>Regístrate y guarda tu progreso de entrenamiento y nutrición.</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="register">
+          <div class="split">
+            <div>
+              <label for="{{ registration_form.first_name.id_for_label }}">Nombre</label>
+              {{ registration_form.first_name }}
+              {% if registration_form.first_name.errors %}<div class="helper">{{ registration_form.first_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ registration_form.last_name.id_for_label }}">Apellido</label>
+              {{ registration_form.last_name }}
+              {% if registration_form.last_name.errors %}<div class="helper">{{ registration_form.last_name.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+          <div>
+            <label for="{{ registration_form.email.id_for_label }}">Correo</label>
+            {{ registration_form.email }}
+            {% if registration_form.email.errors %}<div class="helper">{{ registration_form.email.errors.0 }}</div>{% endif %}
+          </div>
+          <div>
+            <label for="{{ registration_form.username.id_for_label }}">Nombre de usuario</label>
+            {{ registration_form.username }}
+            {% if registration_form.username.errors %}<div class="helper">{{ registration_form.username.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="split">
+            <div>
+              <label for="{{ registration_form.weight_kg.id_for_label }}">Peso (kg)</label>
+              {{ registration_form.weight_kg }}
+              {% if registration_form.weight_kg.errors %}<div class="helper">{{ registration_form.weight_kg.errors.0 }}</div>{% endif %}
+            </div>
+            <div>
+              <label for="{{ registration_form.height_cm.id_for_label }}">Altura (cm)</label>
+              {{ registration_form.height_cm }}
+              {% if registration_form.height_cm.errors %}<div class="helper">{{ registration_form.height_cm.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+          <div class="split">
+            <div>
+              <label for="{{ registration_form.password1.id_for_label }}">Contraseña</label>
+              {{ registration_form.password1 }}
+            </div>
+            <div>
+              <label for="{{ registration_form.password2.id_for_label }}">Repetir contraseña</label>
+              {{ registration_form.password2 }}
+            </div>
+          </div>
+          {% if registration_form.non_field_errors %}
+            <div class="helper">{{ registration_form.non_field_errors.0 }}</div>
+          {% endif %}
+          <button type="submit" class="btn btn-secondary">Registrarme</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
