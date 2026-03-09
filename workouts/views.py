@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.shortcuts import render
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -106,3 +107,20 @@ class FavoriteMealViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+# Template views
+def home_view(request):
+    """
+    Vista principal de la aplicación.
+    Muestra información general y enlaces a las principales secciones.
+    """
+    return render(request, 'home.html')
+
+
+def feed_view(request):
+    """
+    Vista del feed social donde los usuarios pueden ver
+    y compartir rutinas y planes de la comunidad.
+    """
+    return render(request, 'feed.html')
