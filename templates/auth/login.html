@@ -1,0 +1,31 @@
+<!-- login.html es la estructura de la pagina en donde se tiene en cuenta -->
+ <!-- el formulario, los campos(usuario y contraseña), el boton, el texto es basicamente el esqueleto de la pagina -->
+{% load static %}
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="uft-8"/>
+        <meta name="viewport" content="width=devide-width,initial-scale=1" />
+        <title>LOGIN</title>
+        <link rel="stylesheet" href="{% static 'css/LOGIN.css'%}">
+    </head>
+<body>
+    <main class="page">
+        <section class="card">
+            <h1 class="title">FitTrack</h1>
+            <p class="subtitle">Inicia sesión para continuar</p>
+
+             {% if form.errors %}
+            <div class="alert">Usuario o contraseña incorrectos.</div>
+            {% endif %}
+            <form method="post" class "form">
+                {% csrf_token%}
+                <label class="label" for="id_username">Usuario</label>
+                <input class="input" type="text" name="username" id="id_password" required>
+
+                <button class="btn" type="submit">ENTRAR</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
