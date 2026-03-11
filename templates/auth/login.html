@@ -4,10 +4,10 @@
 <!doctype html>
 <html lang="es">
     <head>
-        <meta charset="uft-8"/>
+        <meta charset="utf-8"/>
         <meta name="viewport" content="width=devide-width,initial-scale=1" />
         <title>LOGIN</title>
-        <link rel="stylesheet" href="{% static 'css/LOGIN.css'%}">
+        <link rel="stylesheet" href="{% static 'css/login.css'%}">
     </head>
 <body>
     <main class="page">
@@ -18,7 +18,7 @@
              {% if form.errors %}
             <div class="alert">Usuario o contraseña incorrectos.</div>
             {% endif %}
-            <form method="post" class "form">
+            <form method="post" class="form">
                 {% csrf_token%}
                 <label class="label" for="id_username">Usuario</label>
                 <input class="input" type="text" name="username" id="id_password" required>
