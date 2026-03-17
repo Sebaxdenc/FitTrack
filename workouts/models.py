@@ -3,165 +3,170 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-
 User = get_user_model()
 
-
 class Profile(models.Model):
-	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-	weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-	height_cm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    avatar_url = models.URLField(blank=True)
+    bio = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return f"Profile for {self.user}"
+    def __str__(self):
+        return f"Profile of {self.user}"
 
+class DailyGoal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_goals")
+    goal_date = models.DateField()
+    burn_calories_target = models.IntegerField()
+    burn_calories_current = models.IntegerField(default=0)
+    completed = models.BooleanField(default=False)
 
-class TimeStampedModel(models.Model):
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ("user", "goal_date")
 
-	class Meta:
-		abstract = True
+    def __str__(self):
+        return f"{self.user} - {self.goal_date}"
+    
+class Achievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="achievements")
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    achieved_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.title
+    
+class Meal(models.Model):
+    name = models.CharField(max_length=255)
+    calories = models.IntegerField()
+    carbs_g = models.IntegerField()
+    protein_g = models.IntegerField()
+    fat_g = models.IntegerField()
+    is_predefined = models.BooleanField(default=False)
 
-class Tag(TimeStampedModel):
-	name = models.CharField(max_length=64, unique=True)
+    def __str__(self):
+        return self.name
+    
+    
+class FavoriteMeal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_meals")
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name="favorited_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return self.name
+    class Meta:
+        unique_together = ("user", "meal")
+        
+class MealRating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name="ratings")
+    score = models.IntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("user", "meal")
+        
+class DailyLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="daily_logs")
+    log_date = models.DateField()
+    total_calories_consumed = models.IntegerField(default=0)
+    total_calories_burned = models.IntegerField(default=0)
 
-class Exercise(TimeStampedModel):
-	class Difficulty(models.TextChoices):
-		BEGINNER = 'beginner', 'Beginner'
-		INTERMEDIATE = 'intermediate', 'Intermediate'
-		ADVANCED = 'advanced', 'Advanced'
+    class Meta:
+        unique_together = ("user", "log_date")
+        
+class MealLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE)
+    daily_log = models.ForeignKey(DailyLog, on_delete=models.CASCADE, related_name="meals")
+    eaten_at = models.DateTimeField()
+    quantity = models.FloatField()
+    meal_type = models.CharField(max_length=50)
 
-	name = models.CharField(max_length=128, unique=True)
-	muscle_group = models.CharField(max_length=128)
-	equipment = models.CharField(max_length=128, blank=True)
-	difficulty = models.CharField(
-		max_length=16,
-		choices=Difficulty.choices,
-		default=Difficulty.BEGINNER,
-	)
-	instructions = models.TextField(blank=True)
-	tags = models.ManyToManyField(Tag, related_name='exercises', blank=True)
+    def __str__(self):
+        return f"{self.user} - {self.meal}"
+    
+class Exercise(models.Model):
+    name = models.CharField(max_length=255)
+    muscle_group = models.CharField(max_length=255)
+    type = models.CharField(max_length=100)
+    equipment = models.CharField(max_length=255, blank=True)
+    instructions = models.TextField(blank=True)
 
-	class Meta:
-		ordering = ['name']
+    def __str__(self):
+        return self.name
 
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return self.name
+class FavoriteExercise(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_exercises")
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ("user", "exercise")
 
-class WorkoutRoutine(TimeStampedModel):
-	class Level(models.TextChoices):
-		BEGINNER = 'beginner', 'Beginner'
-		INTERMEDIATE = 'intermediate', 'Intermediate'
-		ADVANCED = 'advanced', 'Advanced'
+class ExerciseRating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name="ratings")
+    score = models.IntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-	creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='routines')
-	title = models.CharField(max_length=128)
-	description = models.TextField(blank=True)
-	duration_minutes = models.PositiveIntegerField(default=30)
-	level = models.CharField(max_length=16, choices=Level.choices, default=Level.BEGINNER)
-	is_public = models.BooleanField(default=True)
-	tags = models.ManyToManyField(Tag, related_name='routines', blank=True)
+    class Meta:
+        unique_together = ("user", "exercise")
 
-	class Meta:
-		ordering = ['-created_at']
-		unique_together = ('creator', 'title')
+class Routine(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="routines")
+    name = models.CharField(max_length=255)
+    goal = models.CharField(max_length=255)
+    is_public = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return self.title
+    def __str__(self):
+        return self.name
+    
+    
+class RoutineExercise(models.Model):
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name="exercises")
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    sort_order = models.IntegerField()
+    target_sets = models.IntegerField()
+    target_reps = models.IntegerField()
+    rest_seconds = models.IntegerField()
 
+    class Meta:
+        ordering = ["sort_order"]
+        unique_together = ("routine", "sort_order")
 
-class WorkoutStep(models.Model):
-	routine = models.ForeignKey(WorkoutRoutine, on_delete=models.CASCADE, related_name='steps')
-	exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='steps')
-	order = models.PositiveIntegerField()
-	sets = models.PositiveIntegerField(default=3)
-	reps = models.PositiveIntegerField(default=10)
-	weight_kg = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-	rest_seconds = models.PositiveIntegerField(default=60)
+class Workout(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="workouts")
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE)
+    started_at = models.DateTimeField()
+    duration_minutes = models.IntegerField()
+    notes = models.TextField(blank=True)
 
-	class Meta:
-		ordering = ['order']
-		unique_together = ('routine', 'order')
+    def __str__(self):
+        return f"{self.user} - {self.started_at}"
+    
+    
+class WorkoutSet(models.Model):
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name="sets")
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    set_number = models.IntegerField()
+    reps = models.IntegerField()
+    weight = models.FloatField()
+    rest_seconds = models.IntegerField()
+    is_warmup = models.BooleanField(default=False)
 
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return f"{self.routine.title} - step {self.order}"
+    def __str__(self):
+        return f"{self.workout} - Set {self.set_number}"
 
+class EquipmentRecommendation(models.Model):
+    name = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
+    description = models.TextField()
+    link = models.URLField()
 
-class Meal(TimeStampedModel):
-	name = models.CharField(max_length=128, unique=True)
-	description = models.TextField(blank=True)
-	calories = models.PositiveIntegerField(default=0)
-	protein_g = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-	carbs_g = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-	fats_g = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-	tags = models.ManyToManyField(Tag, related_name='meals', blank=True)
-
-	class Meta:
-		ordering = ['name']
-
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return self.name
-
-
-class MealPlan(TimeStampedModel):
-	creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meal_plans')
-	title = models.CharField(max_length=128)
-	description = models.TextField(blank=True)
-	is_public = models.BooleanField(default=True)
-	tags = models.ManyToManyField(Tag, related_name='meal_plans', blank=True)
-
-	class Meta:
-		ordering = ['-created_at']
-		unique_together = ('creator', 'title')
-
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return self.title
-
-
-class MealItem(models.Model):
-	plan = models.ForeignKey(MealPlan, on_delete=models.CASCADE, related_name='items')
-	meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name='plan_items')
-	order = models.PositiveIntegerField(default=1)
-	notes = models.TextField(blank=True)
-
-	class Meta:
-		ordering = ['order']
-		unique_together = ('plan', 'order')
-
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return f"{self.plan.title} - item {self.order}"
-
-
-class FavoriteRoutine(TimeStampedModel):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_routines')
-	routine = models.ForeignKey(WorkoutRoutine, on_delete=models.CASCADE, related_name='favorites')
-
-	class Meta:
-		unique_together = ('user', 'routine')
-
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return f"{self.user} -> {self.routine}"
-
-
-class FavoriteMeal(TimeStampedModel):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_meals')
-	meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name='favorites')
-
-	class Meta:
-		unique_together = ('user', 'meal')
-
-	def __str__(self) -> str:  # pragma: no cover - simple repr
-		return f"{self.user} -> {self.meal}"
-
-
-@receiver(post_save, sender=User)
-def ensure_profile_exists(sender, instance, created, **kwargs):
-	if created:
-		Profile.objects.get_or_create(user=instance)
+    def __str__(self):
+        return self.name        
