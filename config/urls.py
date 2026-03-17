@@ -19,6 +19,7 @@ from django.urls import include, path
 from django.contrib.auth import views as auth_views  # 👈 agregar esto
 
 urlpatterns = [
+    path('', include('workouts.frontend_urls')),
     path('admin/', admin.site.urls),
     path('api/', include('workouts.urls')),
     # Ruta del login
