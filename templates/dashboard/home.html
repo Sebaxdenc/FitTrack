@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c1016;
+      --panel: #161c26;
+      --muted: #9aa3b5;
+      --accent: #21e36b;
+      --accent-2: #00c4ff;
+      --card: rgba(255, 255, 255, 0.04);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(120% 120% at 20% 20%, rgba(0, 196, 255, 0.12), transparent 45%),
+                  radial-gradient(120% 120% at 80% 0%, rgba(33, 227, 107, 0.12), transparent 40%),
+                  var(--bg);
+      color: #f5f7fb;
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px 110px;
+    }
+
+    .app-shell {
+      width: min(440px, 100%);
+    }
+
+    .hero {
+      background: #0b0f15;
+      border-radius: 20px;
+      padding: 18px 18px 14px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', 'Manrope', sans-serif;
+      font-size: 28px;
+      letter-spacing: -0.8px;
+      font-weight: 800;
+    }
+    .logo span { color: var(--accent); }
+
+    .chip-time {
+      margin-left: auto;
+      background: #f5f7fb;
+      color: #0c1016;
+      padding: 8px 14px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 13px;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .section-card {
+      margin-top: 14px;
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 14px 18px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(120deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+    }
+
+    .section-header h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.6px;
+      font-weight: 800;
+    }
+
+    .section-header .muted { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+    .section-body { padding: 0 18px 18px; }
+
+    .hero-image {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: var(--shadow);
+      position: relative;
+      background: #0f141c;
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      text-align: center;
+      padding: 18px;
+    }
+
+    .overlay-text {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      right: 16px;
+      text-align: left;
+    }
+
+    .overlay-text h4 { margin: 0 0 4px; font-size: 18px; }
+    .overlay-text p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.85); }
+
+    .tagline { padding: 10px 0 0; font-style: italic; color: var(--muted); font-size: 14px; }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .tile {
+      background: #0f141c;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      min-height: 80px;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      color: #f5f7fb;
+    }
+
+    .cta-row {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .cta-row a {
+      color: var(--accent);
+      font-weight: 800;
+      text-decoration: none;
+    }
+    
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0b0f15;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.4);
+      padding: 10px 14px 12px;
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+    }
+
+    .nav-item {
+      color: #9aa3b5;
+      font-size: 12px;
+      text-decoration: none;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      padding: 4px 0;
+      transition: color 0.15s ease, transform 0.1s ease;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .nav-item:hover { color: #dfe5f2; transform: translateY(-1px); }
+    .nav-item.active { color: #21e36b; font-weight: 700; }
+
+    @media (max-width: 500px) {
+      body { padding: 18px 12px 48px; }
+      .hero { flex-wrap: wrap; }
+      .chip-time { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="logo"><span>FIT</span>track</div>
+      <div class="chip-time" id="chip-time">--</div>
+    </header>
+
+    <section class="section-card">
+      <div class="section-header">
+        <h3>Dinner</h3>
+        <span class="muted" id="meal-time">{{ meal.time_range }}</span>
+      </div>
+      <div class="section-body">
+        <div class="hero-image">
+          <div class="overlay-text">
+            <h4>{{ meal.title }}</h4>
+            <p>{{ meal.subtitle }}</p>
+          </div>
+        </div>
+        <div class="tagline">"{{ meal.subtitle }}"</div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-header">
+        <div>
+          <h3>{{ routine.title|upper }}</h3>
+          <div class="muted">{{ routine.focus }}</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="grid-3">
+          <div class="tile">Sentadillas</div>
+          <div class="tile">Prensa</div>
+          <div class="tile">Curl femoral</div>
+          <div class="tile">Peso muerto rumano</div>
+          <div class="tile">Extensión de cuádriceps</div>
+          <div class="tile">Abductores</div>
+        </div>
+        <div class="cta-row">
+          <span>No skip leg day!</span>
+          <a href="#">{{ routine.cta }}</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-grid">
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6.5h-5V21H5a1 1 0 0 1-1-1z"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v2H5zm0 6h14v2H5zm0 6h14v2H5z"/></svg>
+        <span>Dieta</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h4l2 4 2-4h4l-3 6 3 6h-4l-2-4-2 4H5l3-6z"/></svg>
+        <span>Rutinas</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16l-1.5 9h-13z"/><path d="M9 19.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+        <span>Tienda</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>
+        <span>Social</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+        <span>Perfil</span>
+      </a>
+    </div>
+  </nav>
+
+  <script>
+    (function() {
+      const chipTime = document.getElementById('chip-time');
+
+      function renderClock() {
+        const now = new Date();
+        const opts = { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+        chipTime.textContent = now.toLocaleString('es-ES', opts).toUpperCase();
+      }
+
+      renderClock();
+      setInterval(renderClock, 15000);
+    })();
+  </script>
+</body>
+</html>
