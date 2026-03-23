@@ -1,10 +1,36 @@
 from django.urls import path
 
-from .frontend_views import HomeView, LandingView, LoginView, RegisterView
+from .frontend_views import (
+    ExerciseDeleteView,
+    ExerciseListView,
+    HomeView,
+    LoginView,
+    RegisterView,
+    RoutineCreateView,
+    RoutineDeleteView,
+    RoutineDetailView,
+    RoutineListView,
+)
 
 urlpatterns = [
-    path('', LandingView.as_view(), name='landing'),
-    path('login/', LoginView.as_view(), name='auth-login'),
-    path('register/', RegisterView.as_view(), name='auth-register'),
-    path('home/', HomeView.as_view(), name='dashboard-home'),
+    path("", LoginView.as_view(), name="landing"),
+    path("login/", LoginView.as_view(), name="auth-login"),
+    path("register/", RegisterView.as_view(), name="auth-register"),
+    path("home/", HomeView.as_view(), name="dashboard-home"),
+    path("ejercicios/", ExerciseListView.as_view(), name="exercise-list"),
+    path("exercises/", ExerciseListView.as_view(), name="exercise-list-en"),
+    path("ejercicios/<int:exercise_id>/eliminar/", ExerciseDeleteView.as_view(), name="exercise-delete"),
+    path("exercises/<int:exercise_id>/delete/", ExerciseDeleteView.as_view(), name="exercise-delete-en"),
+    path("rutinas/", RoutineListView.as_view(), name="routine-list"),
+    path("routines/", RoutineListView.as_view(), name="routine-list-en"),
+    path("rutinas/ejercicios/", ExerciseListView.as_view(), name="routine-exercise-list"),
+    path("routines/exercises/", ExerciseListView.as_view(), name="routine-exercise-list-en"),
+    path("rutinas/ejercicios/<int:exercise_id>/eliminar/", ExerciseDeleteView.as_view(), name="routine-exercise-delete"),
+    path("routines/exercises/<int:exercise_id>/delete/", ExerciseDeleteView.as_view(), name="routine-exercise-delete-en"),
+    path("rutinas/nueva/", RoutineCreateView.as_view(), name="routine-create"),
+    path("routines/new/", RoutineCreateView.as_view(), name="routine-create-en"),
+    path("rutinas/<int:routine_id>/", RoutineDetailView.as_view(), name="routine-detail"),
+    path("routines/<int:routine_id>/", RoutineDetailView.as_view(), name="routine-detail-en"),
+    path("rutinas/<int:routine_id>/eliminar/", RoutineDeleteView.as_view(), name="routine-delete"),
+    path("routines/<int:routine_id>/delete/", RoutineDeleteView.as_view(), name="routine-delete-en"),
 ]

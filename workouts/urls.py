@@ -10,7 +10,7 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'exercises', ExerciseViewSet)
+router.register(r'exercises', ExerciseViewSet, basename='exercise')
 router.register(r'routines', RoutineViewSet, basename='routine')
 router.register(r'meals', MealViewSet)
 router.register(r'favorites/exercises', FavoriteExerciseViewSet, basename='favorite-exercises')

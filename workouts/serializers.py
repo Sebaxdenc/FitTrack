@@ -52,17 +52,21 @@ class ProfileSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------
 
 class ExerciseSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Exercise
         fields = [
             "id",
+            "user",
             "name",
             "muscle_group",
             "type",
-            "equipment",
-            "instructions",
+            "image_url",
+            "equipment_photo",
+            "display_image_url",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "user"]
 
 
 class ExerciseRatingSerializer(serializers.ModelSerializer):
