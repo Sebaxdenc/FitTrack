@@ -38,8 +38,12 @@
     {% if routine %}
     <div>
       <h3>{{ routine.name|upper }}</h3>
-      <div class="muted">{{ routine_schedule.get_day_of_week_display }} | {{ routine.goal|default:"Rutina asignada para
-        hoy" }}</div>
+      {% with routine.goal|default:"Rutina asignada para hoy" as goal_text %}
+      <div class="muted">
+        {{ routine_schedule.get_day_of_week_display }} | {{ goal_text }}
+      </div>
+      {% endwith %}
+
     </div>
     {% else %}
     <div>
