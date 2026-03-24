@@ -25,6 +25,8 @@
 
     {% include "dashboard/partials/bottom_nav.html" %}
 
+
+    {% block extra_js %}{% endblock %}
     <script>
         (function () {
             const chipTime = document.getElementById('chip-time');
