@@ -11,3 +11,13 @@ venv/
 env/
 .venv/
 ENV/
+# Coverage
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
