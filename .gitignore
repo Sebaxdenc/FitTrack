@@ -1,6 +1,5 @@
 .env
 *.env
-.env.*
 __pycache__/
 *.py[cod]
 *$py.class
@@ -21,3 +20,5 @@ htmlcov/
 
 # OS
 .DS_Store
+
+staticfiles
