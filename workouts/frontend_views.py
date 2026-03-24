@@ -1,4 +1,3 @@
-import json
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,7 +20,6 @@ from .selectors import (
     get_user_routine,
     get_user_routines,
     get_user_weekly_schedule,
-    get_user_stats
 )
 from .services import create_exercise, create_routine, delete_exercise, delete_routine
 
@@ -74,7 +72,7 @@ class RegisterView(View):
 
 
 class HomeView(LoginRequiredMixin, View):
-    template_name = "dashboard/base.html"
+    template_name = "dashboard/home.html"
 
     def get(self, request):
         sample_meal = {
@@ -249,34 +247,6 @@ class RoutineDeleteView(LoginRequiredMixin, View):
         except (RoutineError, RoutineAccessDeniedError, RoutineNotFoundError) as exc:
             messages.error(request, str(exc))
         return redirect("routine-list")
-
-#TODO: Pass data from the selector to the template for present in dashboards
-class StatsView(LoginRequiredMixin, View):
-    template_name = "dashboard/stats.html"
- 
-    def get(self, request):
-        stats = get_user_stats(request.user)
- 
-        # Serialize chart data to JSON for use in JavaScript
-        weekly_workout_json = json.dumps(stats["weekly_workout_data"])
-        weekly_calorie_json = json.dumps(stats["weekly_calorie_data"])
-        goals_by_week_json = json.dumps(stats["goals_by_week"])
- 
-        return render(
-            request,
-            self.template_name,
-            {
-                "user": request.user,
-                "stats": stats,
-                # Pre-serialized for Chart.js
-                "weekly_workout_json": weekly_workout_json,
-                "weekly_calorie_json": weekly_calorie_json,
-                "goals_by_week_json": goals_by_week_json,
-                "day_labels": dict(RoutineSchedule.DAY_CHOICES),
-            },
-        )
-            
-
 
 
 def _extract_routine_exercises(request):

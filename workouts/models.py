@@ -1,7 +1,20 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.exceptions import ValidationError
+from urllib.parse import urlparse
 
 User = get_user_model()
+
+
+def validate_http_image_url(value):
+    if not value:
+        return
+
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValidationError("La foto debe ser una URL valida con http o https.")
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
@@ -86,14 +99,34 @@ class MealLog(models.Model):
         return f"{self.user} - {self.meal}"
     
 class Exercise(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="created_exercises",
+        null=True,
+        blank=True,
+    )
     name = models.CharField(max_length=255)
     muscle_group = models.CharField(max_length=255)
     type = models.CharField(max_length=100)
-    equipment = models.CharField(max_length=255, blank=True)
-    instructions = models.TextField(blank=True)
+    image_url = models.TextField(
+        blank=True,
+        validators=[validate_http_image_url],
+    )
+    equipment_photo = models.ImageField(
+        upload_to="exercise-equipment/",
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.name
+
+    @property
+    def display_image_url(self):
+        if self.equipment_photo:
+            return self.equipment_photo.url
+        return self.image_url
 
 class FavoriteExercise(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_exercises")
@@ -136,6 +169,38 @@ class RoutineExercise(models.Model):
     class Meta:
         ordering = ["sort_order"]
         unique_together = ("routine", "sort_order")
+
+
+class RoutineSchedule(models.Model):
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+
+    DAY_CHOICES = [
+        (MONDAY, "Lunes"),
+        (TUESDAY, "Martes"),
+        (WEDNESDAY, "Miercoles"),
+        (THURSDAY, "Jueves"),
+        (FRIDAY, "Viernes"),
+        (SATURDAY, "Sabado"),
+        (SUNDAY, "Domingo"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="routine_schedules")
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name="schedules")
+    day_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["day_of_week"]
+        unique_together = ("user", "day_of_week")
+
+    def __str__(self):
+        return f"{self.user} - {self.get_day_of_week_display()} - {self.routine}"
 
 class Workout(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="workouts")
