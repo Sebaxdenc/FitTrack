@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Crear ejercicio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0c1016; --muted:#9aa3b5; --accent:#21e36b; --card:rgba(255,255,255,0.04); --shadow:0 18px 40px rgba(0,0,0,0.35); --danger:#ff9a9a; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:'Manrope',system-ui,sans-serif; background:radial-gradient(120% 120% at 20% 20%, rgba(0,196,255,.12), transparent 45%), radial-gradient(120% 120% at 80% 0%, rgba(33,227,107,.12), transparent 40%), var(--bg); color:#f5f7fb; padding:28px 16px 80px; }
+    .shell { width:min(1080px,100%); margin:0 auto; }
+    .topbar,.card,.exercise-card,.message { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 20px; }
+    .brand { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; }
+    .brand span { color:var(--accent); }
+    .muted { color:var(--muted); }
+    .nav-links { display:flex; gap:12px; flex-wrap:wrap; }
+    .nav-links a { color:#f5f7fb; text-decoration:none; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.08); font-size:13px; }
+    .nav-links a.active { color:var(--accent); }
+    .messages { margin-top:14px; display:grid; gap:8px; }
+    .message { padding:10px 12px; font-size:14px; }
+    .layout { margin-top:16px; display:grid; grid-template-columns:340px 1fr; gap:16px; }
+    .card { padding:20px; }
+    form { display:grid; gap:12px; }
+    label { font-size:13px; color:var(--muted); display:block; margin-bottom:6px; }
+    input { width:100%; background:#0f141c; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; color:#f5f7fb; }
+    .btn { border:none; border-radius:14px; cursor:pointer; padding:12px 14px; font-weight:800; }
+    .btn-primary { background:linear-gradient(120deg, #21e36b, #00c4ff); color:#0c1016; }
+    .btn-danger { background:rgba(255,107,107,.12); color:var(--danger); border:1px solid rgba(255,107,107,.24); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+    .exercise-card { overflow:hidden; }
+    .exercise-image,.exercise-placeholder { width:100%; height:180px; display:block; background:linear-gradient(120deg, rgba(33,227,107,.16), rgba(0,196,255,.12)); object-fit:cover; }
+    .exercise-body { padding:16px; }
+    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:rgba(33,227,107,.12); color:var(--accent); font-size:12px; font-weight:700; }
+    .meta { margin:8px 0 0; color:var(--muted); font-size:13px; }
+    .empty-state { padding:22px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); text-align:center; color:var(--muted); background:rgba(255,255,255,.02); }
+    @media (max-width:880px) { .layout { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <div class="brand"><span>FIT</span>track</div>
+        <div class="muted">Rutinas > Crear y gestionar ejercicios.</div>
+      </div>
+      <nav class="nav-links">
+        <a href="{% url 'dashboard-home' %}">Inicio</a>
+        <a class="active" href="{% url 'routine-list' %}">Rutinas</a>
+      </nav>
+    </section>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <section class="layout">
+      <article class="card">
+        <h2>Crear ejercicio</h2>
+        <p class="muted">Despues podras usarlo dentro de tus rutinas. Puedes pegar una URL o subir una foto del equipo.</p>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div><label for="{{ exercise_form.name.id_for_label }}">Nombre</label>{{ exercise_form.name }}</div>
+          <div><label for="{{ exercise_form.muscle_group.id_for_label }}">Grupo muscular</label>{{ exercise_form.muscle_group }}</div>
+          <div><label for="{{ exercise_form.type.id_for_label }}">Tipo</label>{{ exercise_form.type }}</div>
+          <div><label for="{{ exercise_form.image_url.id_for_label }}">Foto URL opcional</label>{{ exercise_form.image_url }}</div>
+          <div><label for="{{ exercise_form.equipment_photo.id_for_label }}">Foto del equipo</label>{{ exercise_form.equipment_photo }}</div>
+          <button class="btn btn-primary" type="submit">Guardar ejercicio</button>
+        </form>
+      </article>
+      <article class="card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:14px;">
+          <div>
+            <h2>Tus ejercicios</h2>
+            <p class="muted">Todos pertenecen al modulo de rutinas.</p>
+          </div>
+          <a href="{% url 'routine-list' %}" style="color:#21e36b;font-weight:800;text-decoration:none;">Volver a rutinas</a>
+        </div>
+        {% if exercises %}
+          <div class="grid">
+            {% for exercise in exercises %}
+              <section class="exercise-card">
+                {% if exercise.display_image_url %}
+                  <img class="exercise-image" src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}">
+                {% else %}
+                  <div class="exercise-placeholder"></div>
+                {% endif %}
+                <div class="exercise-body">
+                  <span class="pill">{{ exercise.type }}</span>
+                  <h3>{{ exercise.name }}</h3>
+                  <p class="meta">{{ exercise.muscle_group }}</p>
+                  <p class="meta">Creado por {{ exercise.user.username|default:"usuario" }}</p>
+                  <form method="post" action="{% url 'routine-exercise-delete' exercise.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-danger" type="submit">Eliminar</button>
+                  </form>
+                </div>
+              </section>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">Aun no tienes ejercicios guardados. Crea el primero para comenzar a armar rutinas.</div>
+        {% endif %}
+      </article>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Rutinas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0c1016;
+      --muted:#9aa3b5;
+      --accent:#21e36b;
+      --accent-2:#00c4ff;
+      --card:rgba(255,255,255,0.04);
+      --shadow:0 18px 40px rgba(0,0,0,0.35);
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0;
+      min-height:100vh;
+      font-family:'Manrope',system-ui,sans-serif;
+      background:radial-gradient(120% 120% at 20% 20%, rgba(0,196,255,.12), transparent 45%), radial-gradient(120% 120% at 80% 0%, rgba(33,227,107,.12), transparent 40%), var(--bg);
+      color:#f5f7fb;
+      padding:28px 16px 96px;
+    }
+    .shell { width:min(1080px,100%); margin:0 auto; }
+    .topbar,.card,.routine-card,.exercise-row,.message { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 20px; }
+    .brand { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; }
+    .brand span { color:var(--accent); }
+    .muted { color:var(--muted); }
+    .nav-links { display:flex; gap:12px; flex-wrap:wrap; }
+    .nav-links a { color:#f5f7fb; text-decoration:none; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.08); font-size:13px; }
+    .nav-links a.active { color:var(--accent); }
+    .messages { margin-top:14px; display:grid; gap:8px; }
+    .message { padding:10px 12px; font-size:14px; }
+    .actions-row {
+      margin-top:16px;
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .action-btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px 16px;
+      border-radius:14px;
+      text-decoration:none;
+      font-weight:800;
+    }
+    .action-btn.primary {
+      background:linear-gradient(120deg, #21e36b, #00c4ff);
+      color:#0c1016;
+    }
+    .action-btn.secondary {
+      color:#f5f7fb;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.03);
+    }
+    .layout { margin-top:16px; display:grid; grid-template-columns:1.2fr .8fr; gap:16px; }
+    .card { padding:20px; }
+    .stack { display:grid; gap:14px; }
+    .section-head { display:flex; justify-content:space-between; gap:12px; align-items:end; margin-bottom:14px; }
+    .section-head h2, .section-head p { margin:0; }
+    .routine-card { padding:18px; }
+    .pills { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
+    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:rgba(33,227,107,.12); color:var(--accent); font-size:12px; font-weight:700; }
+    .meta-list { display:grid; gap:8px; color:var(--muted); font-size:14px; }
+    .link-row { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:16px; }
+    .link-row a { color:var(--accent); font-weight:800; text-decoration:none; }
+    .empty-state { padding:20px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); color:var(--muted); }
+    .exercise-row {
+      padding:12px;
+      display:grid;
+      grid-template-columns:62px 1fr auto;
+      gap:12px;
+      align-items:center;
+      background:#101722;
+    }
+    .exercise-thumb,.exercise-placeholder {
+      width:62px;
+      height:62px;
+      border-radius:14px;
+      object-fit:cover;
+      display:block;
+      background:linear-gradient(120deg, rgba(33,227,107,.16), rgba(0,196,255,.12));
+    }
+    .exercise-info strong { display:block; margin-bottom:4px; }
+    .exercise-info span { color:var(--muted); font-size:13px; }
+    .exercise-type {
+      color:var(--accent);
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    @media (max-width:880px) { .layout { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <div class="brand"><span>FIT</span>track</div>
+        <div class="muted">Todo tu flujo de entrenamiento queda dentro de rutinas.</div>
+      </div>
+      <nav class="nav-links">
+        <a href="{% url 'dashboard-home' %}">Inicio</a>
+        <a class="active" href="{% url 'routine-list' %}">Rutinas</a>
+      </nav>
+    </section>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="actions-row">
+      <a class="action-btn secondary" href="{% url 'routine-exercise-list' %}">Crear ejercicio</a>
+      <a class="action-btn primary" href="{% url 'routine-create' %}">Crear rutina</a>
+    </div>
+
+    <section class="layout">
+      <article class="card">
+        <div class="section-head">
+          <div>
+            <h2>Tus rutinas</h2>
+            <p class="muted">Arma y consulta tus rutinas desde aqui.</p>
+          </div>
+        </div>
+
+        <div class="stack">
+          {% if routines %}
+            {% for routine in routines %}
+              <section class="routine-card">
+                <h3>{{ routine.name }}</h3>
+                <p class="muted">{{ routine.goal|default:"Sin objetivo especifico" }}</p>
+                <div class="pills">
+                  <span class="pill">{{ routine.exercises.count }} ejercicios</span>
+                  <span class="pill">{% if routine.is_public %}Publica{% else %}Privada{% endif %}</span>
+                </div>
+                <div class="meta-list">
+                  {% for item in routine.exercises.all|slice:":4" %}
+                    <div>{{ item.sort_order }}. {{ item.exercise.name }} - {{ item.target_sets }} x {{ item.target_reps }}</div>
+                  {% endfor %}
+                </div>
+                <div class="link-row">
+                  <a href="{% url 'routine-detail' routine.id %}">Ver detalle</a>
+                  <form method="post" action="{% url 'routine-delete' routine.id %}">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none;border:none;color:#ff9a9a;font-weight:800;cursor:pointer;">Eliminar</button>
+                  </form>
+                </div>
+              </section>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">Aun no tienes rutinas creadas. Usa el boton "Crear rutina".</div>
+          {% endif %}
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-head">
+          <div>
+            <h2>Tus ejercicios</h2>
+            <p class="muted">Tambien se gestionan desde la seccion de rutinas.</p>
+          </div>
+        </div>
+
+        <div class="stack">
+          {% if exercises %}
+            {% for exercise in exercises %}
+              <section class="exercise-row">
+                {% if exercise.display_image_url %}
+                  <img class="exercise-thumb" src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}">
+                {% else %}
+                  <div class="exercise-placeholder"></div>
+                {% endif %}
+                <div class="exercise-info">
+                  <strong>{{ exercise.name }}</strong>
+                  <span>{{ exercise.muscle_group }}</span>
+                </div>
+                <div class="exercise-type">{{ exercise.type }}</div>
+              </section>
+            {% endfor %}
+            <div class="link-row" style="margin-top:4px;">
+              <span class="muted">{{ exercises|length }} ejercicios recientes</span>
+              <a href="{% url 'routine-exercise-list' %}">Gestionar ejercicios</a>
+            </div>
+          {% else %}
+            <div class="empty-state">Todavia no tienes ejercicios. Crea uno primero y despues unelo a tus rutinas.</div>
+          {% endif %}
+        </div>
+
+        <div class="section-head" style="margin-top:24px;">
+          <div>
+            <h2>Agenda semanal</h2>
+            <p class="muted">Aqui ves que rutina quedo asignada a cada dia.</p>
+          </div>
+        </div>
+        <div class="stack">
+          {% if weekly_schedule %}
+            {% for schedule in weekly_schedule %}
+              <section class="routine-card">
+                <strong>{{ schedule.get_day_of_week_display }}</strong>
+                <p class="muted">{{ schedule.routine.name }}</p>
+              </section>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">Todavia no hay dias asignados. Al crear una rutina puedes marcar varios dias de una vez.</div>
+          {% endif %}
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

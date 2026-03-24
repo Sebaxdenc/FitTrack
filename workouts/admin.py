@@ -15,6 +15,7 @@ from .models import (
     Profile,
     Routine,
     RoutineExercise,
+    RoutineSchedule,
     Workout,
     WorkoutSet,
 )
@@ -73,3 +74,4 @@ admin.site.register(MealRating)
 admin.site.register(DailyGoal)
 admin.site.register(WorkoutSet)
 admin.site.register(EquipmentRecommendation)
+admin.site.register(RoutineSchedule)

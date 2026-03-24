@@ -33,9 +33,17 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Exercise.objects.all()
+        if self.request.user.is_authenticated:
+            return queryset.filter(user=self.request.user)
+        return queryset.none()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
