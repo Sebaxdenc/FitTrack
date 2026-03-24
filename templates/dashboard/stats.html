@@ -1,766 +1,379 @@
-<!doctype html>
-<html lang="es">
+{% extends "dashboard/base.html" %}
+{% load static %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>FITtrack | Mis Estadísticas</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        :root {
-            --bg: #0c1016;
-            --muted: #9aa3b5;
-            --accent: #21e36b;
-            --accent2: #00c4ff;
-            --accent3: #ff6b6b;
-            --card: rgba(255, 255, 255, 0.04);
-            --card-solid: #101722;
-            --border: rgba(255, 255, 255, .06);
-            --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-        }
+{% block title %}Dashboard{% endblock %}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/stats.css' %}">
+<style>
+    .app-shell {
+        width: min(1040px, 100%);
+    }
+</style>
+{% endblock %}
 
-        body {
-            min-height: 100vh;
-            font-family: 'Manrope', system-ui, sans-serif;
-            background:
-                radial-gradient(120% 120% at 20% 20%, rgba(0, 196, 255, .12), transparent 45%),
-                radial-gradient(120% 120% at 80% 0%, rgba(33, 227, 107, .12), transparent 40%),
-                var(--bg);
-            color: #f5f7fb;
-            padding: 28px 16px 80px;
-        }
+{% block content %}
 
-        .shell {
-            width: min(1040px, 100%);
-            margin: 0 auto;
-        }
-
-        /* ── Brand & header ── */
-        .brand {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 28px;
-            font-weight: 800;
-        }
-
-        .brand span {
-            color: var(--accent);
-        }
-
-        .muted {
-            color: var(--muted);
-        }
-
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        /* ── Cards ── */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .card-solid {
-            background: var(--card-solid);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 18px;
-        }
-
-        /* ── Top header card ── */
-        .header-row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 6px;
-        }
-
-        .header-row h1 {
-            font-size: clamp(1.4rem, 3vw, 1.9rem);
-            font-weight: 700;
-        }
-
-        .streak-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, rgba(255, 107, 53, .25), rgba(255, 61, 61, .20));
-            border: 1px solid rgba(255, 107, 53, .3);
-            color: #ff8f60;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 6px 12px;
-            border-radius: 999px;
-            white-space: nowrap;
-        }
-
-        /* ── KPI grid ── */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .kpi {
-            background: var(--card-solid);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 16px 18px;
-        }
-
-        .kpi-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            color: var(--muted);
-            margin-bottom: 6px;
-        }
-
-        .kpi-value {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .kpi-value.g {
-            color: var(--accent);
-        }
-
-        .kpi-value.b {
-            color: var(--accent2);
-        }
-
-        .kpi-value.r {
-            color: var(--accent3);
-        }
-
-        .kpi-sub {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 5px;
-        }
-
-        /* ── 2-col / 3-col grids ── */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        /* ── Chart wrappers ── */
-        .chart-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-        }
-
-        .chart-header h3 {
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .pill {
-            display: inline-flex;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(33, 227, 107, .12);
-            color: var(--accent);
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .pill.blue {
-            background: rgba(0, 196, 255, .12);
-            color: var(--accent2);
-        }
-
-        .chart-wrap {
-            position: relative;
-            height: 190px;
-        }
-
-        .chart-wrap-tall {
-            position: relative;
-            height: 240px;
-        }
-
-        .chart-wrap-sm {
-            position: relative;
-            height: 110px;
-        }
-
-        /* ── Today's goal ── */
-        .goal-bar-outer {
-            background: rgba(255, 255, 255, .07);
-            border-radius: 999px;
-            height: 8px;
-            overflow: hidden;
-            margin: 10px 0 6px;
-        }
-
-        .goal-bar-inner {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--accent), #00c4ff);
-        }
-
-        .goal-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .goal-row strong {
-            color: #f5f7fb;
-            font-weight: 600;
-        }
-
-        /* ── Stat rows ── */
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 9px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-
-        .stat-row:last-child {
-            border-bottom: none;
-        }
-
-        .stat-row-label {
-            color: var(--muted);
-        }
-
-        .stat-row-val {
-            font-weight: 700;
-            font-family: 'Space Grotesk', sans-serif;
-        }
-
-        /* ── Achievements ── */
-        .ach-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 9px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .ach-item:last-child {
-            border-bottom: none;
-        }
-
-        .ach-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, .3), rgba(255, 170, 0, .2));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            flex-shrink: 0;
-        }
-
-        .ach-title {
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .ach-desc {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
-        /* ── Section divider ── */
-        .section-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            color: var(--muted);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        /* ── Calorie summary mini-cards ── */
-        .cal-mini {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .cal-mini-card {
-            background: var(--card-solid);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 12px 14px;
-            flex: 1;
-        }
-
-        .cal-mini-card .kpi-value {
-            font-size: 1.45rem;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 900px) {
-            .kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .grid-3 {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .kpi-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .grid-2,
-            .grid-3 {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ── Fade-in ── */
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(14px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card,
-        .kpi {
-            animation: fadeUp .35s ease both;
-        }
-
-        .kpi:nth-child(1) {
-            animation-delay: .04s;
-        }
-
-        .kpi:nth-child(2) {
-            animation-delay: .08s;
-        }
-
-        .kpi:nth-child(3) {
-            animation-delay: .12s;
-        }
-
-        .kpi:nth-child(4) {
-            animation-delay: .16s;
-        }
-    </style>
-</head>
-
-<body>
-    <main class="shell">
-
-        <!-- ── Header ── -->
-        <section class="card">
-            <div class="brand"><span>FIT</span>track</div>
-            <div class="header-row" style="margin-top:12px;">
-                <div>
-                    <h1>Mis estadísticas</h1>
-                    <p class="muted" style="margin-top:4px;">Hola, {{ user.get_short_name|default:user.username }}
-                        &middot; últimos 7 días</p>
-                </div>
-                {% if stats.current_streak > 0 %}
-                <div class="streak-badge">
-                    🔥 {{ stats.current_streak }} día{{ stats.current_streak|pluralize:",s" }} seguido{{
-                    stats.current_streak|pluralize:",s" }}
-                </div>
-                {% endif %}
+<main class="shell">
+    <!-- ── Header ── -->
+    <section class="card">
+        <div class="brand"><span>FIT</span>track</div>
+        <div class="header-row" style="margin-top:12px;">
+            <div>
+                <h1>Mis estadísticas</h1>
+                <p class="muted" style="margin-top:4px;">Hola, {{ user.get_short_name|default:user.username }}
+                    &middot; últimos 7 días</p>
             </div>
-            <p style="margin-top:10px;"><a href="{% url 'dashboard-home' %}">← Volver al inicio</a></p>
+            {% if stats.current_streak > 0 %}
+            <div class="streak-badge">
+                🔥 {{ stats.current_streak }} día{{ stats.current_streak|pluralize:",s" }} seguido{{
+                stats.current_streak|pluralize:",s" }}
+            </div>
+            {% endif %}
+        </div>
+        <p style="margin-top:10px;"><a href="{% url 'dashboard-home' %}">← Volver al inicio</a></p>
+    </section>
+
+    <!-- ── KPIs ── -->
+    <p class="section-label">Resumen general</p>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Entrenamientos (7d)</div>
+            <div class="kpi-value g">{{ stats.workouts_last_7 }}</div>
+            <div class="kpi-sub">{{ stats.workouts_last_30 }} en los últimos 30 días</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Horas entrenadas</div>
+            <div class="kpi-value">{{ stats.total_duration_hours }}h</div>
+            <div class="kpi-sub">~{{ stats.avg_duration_minutes }} min por sesión</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Cal. quemadas (prom.)</div>
+            <div class="kpi-value b">{{ stats.avg_calories_burned_7d }}</div>
+            <div class="kpi-sub">kcal por día esta semana</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Logros desbloqueados</div>
+            <div class="kpi-value r">{{ stats.total_achievements }}</div>
+            <div class="kpi-sub">{{ stats.scheduled_days }} días programados</div>
+        </div>
+    </div>
+
+    <!-- ── Actividad semanal ── -->
+    <p class="section-label">Actividad semanal</p>
+    <div class="grid-2">
+
+        <section class="card">
+            <div class="chart-header">
+                <h3>Entrenamientos por día</h3>
+                <span class="pill">7 días</span>
+            </div>
+            <div class="chart-wrap"><canvas id="workoutChart"></canvas></div>
         </section>
 
-        <!-- ── KPIs ── -->
-        <p class="section-label">Resumen general</p>
-        <div class="kpi-grid">
-            <div class="kpi">
-                <div class="kpi-label">Entrenamientos (7d)</div>
-                <div class="kpi-value g">{{ stats.workouts_last_7 }}</div>
-                <div class="kpi-sub">{{ stats.workouts_last_30 }} en los últimos 30 días</div>
+        <section class="card">
+            <div class="chart-header">
+                <h3>Duración por sesión</h3>
+                <span class="pill blue">minutos</span>
             </div>
-            <div class="kpi">
-                <div class="kpi-label">Horas entrenadas</div>
-                <div class="kpi-value">{{ stats.total_duration_hours }}h</div>
-                <div class="kpi-sub">~{{ stats.avg_duration_minutes }} min por sesión</div>
+            <div class="chart-wrap"><canvas id="durationChart"></canvas></div>
+        </section>
+
+    </div>
+
+    <!-- ── Calorías ── -->
+    <p class="section-label">Calorías</p>
+    <div class="grid-3">
+
+        <section class="card">
+            <div class="chart-header">
+                <h3>Consumidas vs Quemadas</h3>
+                <span class="pill">kcal / día</span>
             </div>
-            <div class="kpi">
-                <div class="kpi-label">Cal. quemadas (prom.)</div>
+            <div class="chart-wrap-tall"><canvas id="caloriesChart"></canvas></div>
+        </section>
+
+        <div class="cal-mini">
+            <div class="cal-mini-card">
+                <div class="kpi-label">Prom. consumidas</div>
+                <div class="kpi-value g">{{ stats.avg_calories_consumed_7d }}</div>
+                <div class="kpi-sub">kcal / día (7d)</div>
+            </div>
+            <div class="cal-mini-card">
+                <div class="kpi-label">Prom. quemadas</div>
                 <div class="kpi-value b">{{ stats.avg_calories_burned_7d }}</div>
-                <div class="kpi-sub">kcal por día esta semana</div>
+                <div class="kpi-sub">kcal / día (7d)</div>
             </div>
-            <div class="kpi">
-                <div class="kpi-label">Logros desbloqueados</div>
-                <div class="kpi-value r">{{ stats.total_achievements }}</div>
-                <div class="kpi-sub">{{ stats.scheduled_days }} días programados</div>
-            </div>
-        </div>
-
-        <!-- ── Actividad semanal ── -->
-        <p class="section-label">Actividad semanal</p>
-        <div class="grid-2">
-
-            <section class="card">
-                <div class="chart-header">
-                    <h3>Entrenamientos por día</h3>
-                    <span class="pill">7 días</span>
-                </div>
-                <div class="chart-wrap"><canvas id="workoutChart"></canvas></div>
-            </section>
-
-            <section class="card">
-                <div class="chart-header">
-                    <h3>Duración por sesión</h3>
-                    <span class="pill blue">minutos</span>
-                </div>
-                <div class="chart-wrap"><canvas id="durationChart"></canvas></div>
-            </section>
-
-        </div>
-
-        <!-- ── Calorías ── -->
-        <p class="section-label">Calorías</p>
-        <div class="grid-3">
-
-            <section class="card">
-                <div class="chart-header">
-                    <h3>Consumidas vs Quemadas</h3>
-                    <span class="pill">kcal / día</span>
-                </div>
-                <div class="chart-wrap-tall"><canvas id="caloriesChart"></canvas></div>
-            </section>
-
-            <div class="cal-mini">
-                <div class="cal-mini-card">
-                    <div class="kpi-label">Prom. consumidas</div>
-                    <div class="kpi-value g">{{ stats.avg_calories_consumed_7d }}</div>
-                    <div class="kpi-sub">kcal / día (7d)</div>
-                </div>
-                <div class="cal-mini-card">
-                    <div class="kpi-label">Prom. quemadas</div>
-                    <div class="kpi-value b">{{ stats.avg_calories_burned_7d }}</div>
-                    <div class="kpi-sub">kcal / día (7d)</div>
-                </div>
-                <div class="cal-mini-card">
-                    <div class="kpi-label">Balance neto</div>
-                    <div class="kpi-value" style="font-size:1.45rem;color:var(--muted);">
-                        {% with net=stats.avg_calories_consumed_7d|add:stats.avg_calories_burned_7d %}
-                        {% if stats.avg_calories_consumed_7d > stats.avg_calories_burned_7d %}
-                        <span style="color:var(--accent3);">+{{ stats.avg_calories_consumed_7d }}</span>
-                        {% else %}
-                        <span style="color:var(--accent);">{{ stats.avg_calories_consumed_7d }}</span>
-                        {% endif %}
-                        {% endwith %}
-                    </div>
-                    <div class="kpi-sub">consumidas − quemadas</div>
-                </div>
-            </div>
-
-            <!-- Rutinas info -->
-            <section class="card">
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Rutinas</h3>
-                <div class="stat-row">
-                    <span class="stat-row-label">Total rutinas</span>
-                    <span class="stat-row-val">{{ stats.total_routines }}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-row-label">Días programados</span>
-                    <span class="stat-row-val" style="color:var(--accent);">{{ stats.scheduled_days }}/7</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-row-label">Racha actual</span>
-                    <span class="stat-row-val" style="color:#ff8f60;">🔥 {{ stats.current_streak }}d</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-row-label">Total entrenamientos</span>
-                    <span class="stat-row-val">{{ stats.total_workouts }}</span>
-                </div>
-            </section>
-
-        </div>
-
-        <!-- ── Objetivos y logros ── -->
-        <p class="section-label">Objetivos y logros</p>
-        <div class="grid-2">
-
-            <!-- Metas -->
-            <section class="card">
-                <div class="chart-header">
-                    <h3>Metas completadas por semana</h3>
-                    <span class="pill">30 días</span>
-                </div>
-                <div class="chart-wrap"><canvas id="goalsChart"></canvas></div>
-                <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px;">
-                    <span class="muted">Total metas: <strong style='color:#f5f7fb;'>{{ stats.total_goals }}</strong><span/>
-                    <span class="muted">Tasa de éxito: <strong style='color:var(--accent);'>{{ stats.goal_completion_rate }}%</strong><span/>
-                </div>
-            </section>
-
-            <!-- Meta de hoy + logros -->
-            <div style="display:flex;flex-direction:column;gap:16px;">
-
-                <section class="card" style="flex:0 0 auto;">
-                    <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Meta de hoy</h3>
-                    {% if stats.todays_goal %}
-                    {% if stats.todays_goal.completed %}
-                    <p style="color:var(--accent);font-weight:700;font-size:15px;">✓ ¡Meta cumplida!</p>
+            <div class="cal-mini-card">
+                <div class="kpi-label">Balance neto</div>
+                <div class="kpi-value" style="font-size:1.45rem;color:var(--muted);">
+                    {% with net=stats.avg_calories_consumed_7d|add:stats.avg_calories_burned_7d %}
+                    {% if stats.avg_calories_consumed_7d > stats.avg_calories_burned_7d %}
+                    <span style="color:var(--accent3);">+{{ stats.avg_calories_consumed_7d }}</span>
                     {% else %}
-                    <p style="font-weight:600;font-size:13px;color:var(--muted);">En progreso…</p>
+                    <span style="color:var(--accent);">{{ stats.avg_calories_consumed_7d }}</span>
                     {% endif %}
-                    <p class="muted" style="font-size:11px;margin-top:8px;margin-bottom:2px;">Calorías quemadas</p>
-                    <p style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;line-height:1;">
-                        {{ stats.todays_goal.burn_calories_current }}
-                        <span style="font-size:.85rem;font-weight:400;color:var(--muted);">/ {{
-                            stats.todays_goal.burn_calories_target }} kcal</span>
-                    </p>
-                    <div class="goal-bar-outer">
-                        <div class="goal-bar-inner"
-                            style="width:{% widthratio stats.todays_goal.burn_calories_current stats.todays_goal.burn_calories_target 100 %}%;">
-                        </div>
-                    </div>
-                    <div class="goal-row">
-                        <span><strong>{{ stats.todays_goal.burn_calories_current }}</strong> quemadas</span>
-                        <span>meta: <strong>{{ stats.todays_goal.burn_calories_target }}</strong></span>
-                    </div>
-                    <!-- Mini donut -->
-                    <div style="position:relative;height:90px;margin-top:14px;">
-                        <canvas id="goalRateChart"></canvas>
-                    </div>
-                    <p
-                        style="text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent);margin-top:4px;">
-                        {{ stats.goal_completion_rate }}% completado (30d)
-                    </p>
-                    {% else %}
-                    <p class="muted" style="font-size:13px;">No hay meta registrada para hoy.</p>
-                    {% endif %}
-                </section>
-
-                <section class="card" style="flex:1;">
-                    <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Logros recientes</h3>
-                    {% if stats.recent_achievements %}
-                    {% for ach in stats.recent_achievements %}
-                    <div class="ach-item">
-                        <div class="ach-icon">🏆</div>
-                        <div>
-                            <div class="ach-title">{{ ach.title }}</div>
-                            <div class="ach-desc">{{ ach.description|truncatechars:65 }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <p class="muted" style="font-size:13px;">Aún no tienes logros. ¡Sigue entrenando!</p>
-                    {% endif %}
-                </section>
-
+                    {% endwith %}
+                </div>
+                <div class="kpi-sub">consumidas − quemadas</div>
             </div>
         </div>
 
-    </main>
+        <!-- Rutinas info -->
+        <section class="card">
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Rutinas</h3>
+            <div class="stat-row">
+                <span class="stat-row-label">Total rutinas</span>
+                <span class="stat-row-val">{{ stats.total_routines }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-row-label">Días programados</span>
+                <span class="stat-row-val" style="color:var(--accent);">{{ stats.scheduled_days }}/7</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-row-label">Racha actual</span>
+                <span class="stat-row-val" style="color:#ff8f60;">🔥 {{ stats.current_streak }}d</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-row-label">Total entrenamientos</span>
+                <span class="stat-row-val">{{ stats.total_workouts }}</span>
+            </div>
+        </section>
 
-    <!-- ── Charts ── -->
-    <script>
-        Chart.defaults.color = '#9aa3b5';
-        Chart.defaults.font.family = "'Manrope', sans-serif";
-        Chart.defaults.font.size = 12;
+    </div>
 
-        const ACCENT = '#21e36b';
-        const ACCENT2 = '#00c4ff';
-        const BORDER = 'rgba(255,255,255,.07)';
-        const GRID = { color: BORDER, drawBorder: false };
+    <!-- ── Objetivos y logros ── -->
+    <p class="section-label">Objetivos y logros</p>
+    <div class="grid-2">
 
-        const workoutData = {{ weekly_workout_json| safe }};
-        const calorieData = {{ weekly_calorie_json| safe }};
-        const goalsData = {{ goals_by_week_json| safe }};
+        <!-- Metas -->
+        <section class="card">
+            <div class="chart-header">
+                <h3>Metas completadas por semana</h3>
+                <span class="pill">30 días</span>
+            </div>
+            <div class="chart-wrap"><canvas id="goalsChart"></canvas></div>
+            <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px;">
+                <span class="muted">Total metas: <strong style='color:#f5f7fb;'>{{ stats.total_goals }}</strong><span />
+                    <span class="muted">Tasa de éxito: <strong
+                            style='color:var(--accent);'>{{stats.goal_completion_rate}}%</strong><span />
+            </div>
+        </section>
 
-        const dayLabels = workoutData.map(d => d.label);
-        const workoutCounts = workoutData.map(d => d.count);
-        const durationMins = workoutData.map(d => d.minutes);
-        const calConsumed = calorieData.map(d => d.consumed);
-        const calBurned = calorieData.map(d => d.burned);
-        const weekLabels = goalsData.map(d => d.week);
-        const goalsComp = goalsData.map(d => d.completed);
-        const goalsTotal = goalsData.map(d => d.total);
+        <!-- Meta de hoy + logros -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
 
-        const noLegend = { display: false };
-        const baseScale = {
-            grid: GRID,
-            border: { display: false },
-            ticks: { color: '#9aa3b5' }
-        };
+            <section class="card" style="flex:0 0 auto;">
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Meta de hoy</h3>
+                {% if stats.todays_goal %}
+                {% if stats.todays_goal.completed %}
+                <p style="color:var(--accent);font-weight:700;font-size:15px;">✓ ¡Meta cumplida!</p>
+                {% else %}
+                <p style="font-weight:600;font-size:13px;color:var(--muted);">En progreso…</p>
+                {% endif %}
+                <p class="muted" style="font-size:11px;margin-top:8px;margin-bottom:2px;">Calorías quemadas</p>
+                <p style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;line-height:1;">
+                    {{ stats.todays_goal.burn_calories_current }}
+                    <span style="font-size:.85rem;font-weight:400;color:var(--muted);">
+                        / {{stats.todays_goal.burn_calories_target }} kcal</span>
+                </p>
+                <div class="goal-bar-outer">
+                    <div class="goal-bar-inner"
+                        style="width:{% widthratio stats.todays_goal.burn_calories_current stats.todays_goal.burn_calories_target 100 %}%;">
+                    </div>
+                </div>
+                <div class="goal-row">
+                    <span><strong>{{ stats.todays_goal.burn_calories_current }}</strong> quemadas</span>
+                    <span>meta: <strong>{{ stats.todays_goal.burn_calories_target }}</strong></span>
+                </div>
+                <!-- Mini donut -->
+                <div style="position:relative;height:90px;margin-top:14px;">
+                    <canvas id="goalRateChart"></canvas>
+                </div>
+                <p
+                    style="text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent);margin-top:4px;">
+                    {{ stats.goal_completion_rate }}% completado (30d)
+                </p>
+                {% else %}
+                <p class="muted" style="font-size:13px;">No hay meta registrada para hoy.</p>
+                {% endif %}
+            </section>
 
-        // 1. Workout bars
-        new Chart(document.getElementById('workoutChart'), {
-            type: 'bar',
-            data: {
-                labels: dayLabels,
-                datasets: [{
-                    data: workoutCounts,
-                    backgroundColor: workoutCounts.map(v => v > 0 ? 'rgba(33,227,107,.75)' : 'rgba(255,255,255,.06)'),
-                    borderRadius: 8, borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: noLegend },
-                scales: {
-                    x: { ...baseScale, grid: { display: false } },
-                    y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, stepSize: 1 } }
-                }
+            <section class="card" style="flex:1;">
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Logros recientes</h3>
+                {% if stats.recent_achievements %}
+                {% for ach in stats.recent_achievements %}
+                <div class="ach-item">
+                    <div class="ach-icon">🏆</div>
+                    <div>
+                        <div class="ach-title">{{ ach.title }}</div>
+                        <div class="ach-desc">{{ ach.description|truncatechars:65 }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="muted" style="font-size:13px;">Aún no tienes logros. ¡Sigue entrenando!</p>
+                {% endif %}
+            </section>
+
+        </div>
+    </div>
+</main>
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+<!-- ── Charts ── -->
+<script>
+    Chart.defaults.color = '#9aa3b5';
+    Chart.defaults.font.family = "'Manrope', sans-serif";
+    Chart.defaults.font.size = 12;
+
+    const ACCENT = '#21e36b';
+    const ACCENT2 = '#00c4ff';
+    const BORDER = 'rgba(255,255,255,.07)';
+    const GRID = { color: BORDER, drawBorder: false };
+
+    const workoutData = {{ weekly_workout_json| safe }};
+    const calorieData = {{ weekly_calorie_json| safe }};
+    const goalsData = {{ goals_by_week_json| safe }};
+
+    const dayLabels = workoutData.map(d => d.label);
+    const workoutCounts = workoutData.map(d => d.count);
+    const durationMins = workoutData.map(d => d.minutes);
+    const calConsumed = calorieData.map(d => d.consumed);
+    const calBurned = calorieData.map(d => d.burned);
+    const weekLabels = goalsData.map(d => d.week);
+    const goalsComp = goalsData.map(d => d.completed);
+    const goalsTotal = goalsData.map(d => d.total);
+
+    const noLegend = { display: false };
+    const baseScale = {
+        grid: GRID,
+        border: { display: false },
+        ticks: { color: '#9aa3b5' }
+    };
+
+    // 1. Workout bars
+    new Chart(document.getElementById('workoutChart'), {
+        type: 'bar',
+        data: {
+            labels: dayLabels,
+            datasets: [{
+                data: workoutCounts,
+                backgroundColor: workoutCounts.map(v => v > 0 ? 'rgba(33,227,107,.75)' : 'rgba(255,255,255,.06)'),
+                borderRadius: 8, borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: noLegend },
+            scales: {
+                x: { ...baseScale, grid: { display: false } },
+                y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, stepSize: 1 } }
             }
-        });
-
-        // 2. Duration line
-        new Chart(document.getElementById('durationChart'), {
-            type: 'line',
-            data: {
-                labels: dayLabels,
-                datasets: [{
-                    data: durationMins,
-                    borderColor: ACCENT2, backgroundColor: 'rgba(0,196,255,.08)',
-                    borderWidth: 2.5, pointBackgroundColor: ACCENT2,
-                    pointRadius: 5, pointHoverRadius: 7, tension: 0.4, fill: true
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: noLegend },
-                scales: {
-                    x: { ...baseScale, grid: { display: false } },
-                    y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, callback: v => v + 'm' } }
-                }
-            }
-        });
-
-        // 3. Calories grouped bar
-        new Chart(document.getElementById('caloriesChart'), {
-            type: 'bar',
-            data: {
-                labels: dayLabels,
-                datasets: [
-                    {
-                        label: 'Consumidas', data: calConsumed,
-                        backgroundColor: 'rgba(33,227,107,.7)', borderRadius: 6, borderSkipped: false
-                    },
-                    {
-                        label: 'Quemadas', data: calBurned,
-                        backgroundColor: 'rgba(0,196,255,.7)', borderRadius: 6, borderSkipped: false
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
-                },
-                scales: {
-                    x: { ...baseScale, grid: { display: false } },
-                    y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, callback: v => v + ' kcal' } }
-                }
-            }
-        });
-
-        // 4. Goals by week
-        new Chart(document.getElementById('goalsChart'), {
-            type: 'bar',
-            data: {
-                labels: weekLabels,
-                datasets: [
-                    {
-                        label: 'Completadas', data: goalsComp,
-                        backgroundColor: 'rgba(33,227,107,.75)', borderRadius: 6, borderSkipped: false
-                    },
-                    {
-                        label: 'Total', data: goalsTotal,
-                        backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 6, borderSkipped: false
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
-                },
-                scales: {
-                    x: { ...baseScale, grid: { display: false } },
-                    y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, stepSize: 1 } }
-                }
-            }
-        });
-
-        // 5. Goal rate donut
-        const goalRate = parseFloat("{{ stats.goal_completion_rate }}") || 0;
-        const donutEl = document.getElementById('goalRateChart');
-        if (donutEl) {
-            new Chart(donutEl, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [goalRate, 100 - goalRate],
-                        backgroundColor: [ACCENT, 'rgba(255,255,255,.07)'],
-                        borderWidth: 0, borderRadius: 4,
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    cutout: '72%',
-                    plugins: { legend: noLegend, tooltip: { enabled: false } }
-                }
-            });
         }
-    </script>
-</body>
+    });
 
-</html>
+    // 2. Duration line
+    new Chart(document.getElementById('durationChart'), {
+        type: 'line',
+        data: {
+            labels: dayLabels,
+            datasets: [{
+                data: durationMins,
+                borderColor: ACCENT2, backgroundColor: 'rgba(0,196,255,.08)',
+                borderWidth: 2.5, pointBackgroundColor: ACCENT2,
+                pointRadius: 5, pointHoverRadius: 7, tension: 0.4, fill: true
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: noLegend },
+            scales: {
+                x: { ...baseScale, grid: { display: false } },
+                y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, callback: v => v + 'm' } }
+            }
+        }
+    });
+
+    // 3. Calories grouped bar
+    new Chart(document.getElementById('caloriesChart'), {
+        type: 'bar',
+        data: {
+            labels: dayLabels,
+            datasets: [
+                {
+                    label: 'Consumidas', data: calConsumed,
+                    backgroundColor: 'rgba(33,227,107,.7)', borderRadius: 6, borderSkipped: false
+                },
+                {
+                    label: 'Quemadas', data: calBurned,
+                    backgroundColor: 'rgba(0,196,255,.7)', borderRadius: 6, borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
+            },
+            scales: {
+                x: { ...baseScale, grid: { display: false } },
+                y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, callback: v => v + ' kcal' } }
+            }
+        }
+    });
+
+    // 4. Goals by week
+    new Chart(document.getElementById('goalsChart'), {
+        type: 'bar',
+        data: {
+            labels: weekLabels,
+            datasets: [
+                {
+                    label: 'Completadas', data: goalsComp,
+                    backgroundColor: 'rgba(33,227,107,.75)', borderRadius: 6, borderSkipped: false
+                },
+                {
+                    label: 'Total', data: goalsTotal,
+                    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 6, borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
+            },
+            scales: {
+                x: { ...baseScale, grid: { display: false } },
+                y: { ...baseScale, beginAtZero: true, ticks: { ...baseScale.ticks, stepSize: 1 } }
+            }
+        }
+    });
+
+    // 5. Goal rate donut
+    const goalRate = parseFloat("{{ stats.goal_completion_rate }}") || 0;
+    const donutEl = document.getElementById('goalRateChart');
+    if (donutEl) {
+        new Chart(donutEl, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [goalRate, 100 - goalRate],
+                    backgroundColor: [ACCENT, 'rgba(255,255,255,.07)'],
+                    borderWidth: 0, borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: { legend: noLegend, tooltip: { enabled: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}
