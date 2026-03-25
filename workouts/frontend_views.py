@@ -4,6 +4,7 @@ from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.views import View
+from .models import Meal
 
 from .exceptions import (
     ExerciseAccessDeniedError,
@@ -299,3 +300,13 @@ def _extract_routine_exercises(request):
         )
 
     return exercise_items
+
+class DietView(LoginRequiredMixin, View):
+    template_name = "diet.html"
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            "breakfast": Meal.objects.filter(is_predefined=True, category__name="Desayuno"),
+            "lunch": Meal.objects.filter(is_predefined=True, category__name="Almuerzo"),
+            "dinner": Meal.objects.filter(is_predefined=True, category__name="Cena"),
+        })

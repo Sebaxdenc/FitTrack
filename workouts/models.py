@@ -47,6 +47,13 @@ class Achievement(models.Model):
     def __str__(self):
         return self.title
     
+class MealCategory(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 class Meal(models.Model):
     name = models.CharField(max_length=255)
     calories = models.IntegerField()
@@ -55,9 +62,16 @@ class Meal(models.Model):
     fat_g = models.IntegerField()
     is_predefined = models.BooleanField(default=False)
 
+    category = models.ForeignKey(
+        MealCategory,
+        on_delete=models.CASCADE,
+        related_name="meals",
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return self.name
-    
     
 class FavoriteMeal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_meals")

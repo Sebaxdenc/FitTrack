@@ -1,0 +1,202 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Dieta{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.logo span {
+  color: #21e36b;
+}
+
+.chip-time {
+  margin-left: auto;
+  background: white;
+  color: black;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.section {
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  margin-bottom: 15px;
+  overflow: hidden;
+  transition: 0.3s;
+}
+
+.header {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  background: rgba(255,255,255,0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow {
+  color: #21e36b;
+}
+
+.content {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  padding: 0 15px;
+}
+
+.section.active .content {
+  max-height: 400px;
+  padding: 10px 15px;
+}
+
+.meal {
+  background: #0b1118;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.meal-name {
+  font-weight: 600;
+}
+
+.meal-calories {
+  color: #21e36b;
+  font-size: 14px;
+}
+
+.meal-macros {
+  font-size: 13px;
+  color: #9aa3b5;
+  display: flex;
+  gap: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<header class="hero">
+  <div class="logo"><span>FIT</span>track</div>
+  <div class="chip-time" id="chip-time">--</div>
+</header>
+
+<h1 style="color:#21e36b; margin:20px 0;">Mi Dieta</h1>
+
+<!-- DESAYUNO -->
+<div class="section active">
+  <div class="header" onclick="toggle('breakfast')">
+    <div class="header-left">
+      <div class="icon">🌅</div>
+      <b>Desayuno</b>
+    </div>
+    <span class="arrow">⌄</span>
+  </div>
+
+  <div id="breakfast" class="content">
+    {% for meal in breakfast %}
+    <div class="meal">
+      <div class="meal-name">{{ meal.name }}</div>
+      <div class="meal-calories">{{ meal.calories }} kcal</div>
+      <div class="meal-macros">
+        <span>P: {{ meal.protein_g }}g</span>
+        <span>C: {{ meal.carbs_g }}g</span>
+        <span>G: {{ meal.fat_g }}g</span>
+      </div>
+    </div>
+    {% empty %}
+    <p>No hay comidas</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ALMUERZO -->
+<div class="section">
+  <div class="header" onclick="toggle('lunch')">
+    <div class="header-left">
+      <div class="icon">☀️</div>
+      <b>Almuerzo</b>
+    </div>
+    <span class="arrow">⌄</span>
+  </div>
+
+  <div id="lunch" class="content">
+    {% for meal in lunch %}
+    <div class="meal">
+      <div class="meal-name">{{ meal.name }}</div>
+      <div class="meal-calories">{{ meal.calories }} kcal</div>
+      <div class="meal-macros">
+        <span>P: {{ meal.protein_g }}g</span>
+        <span>C: {{ meal.carbs_g }}g</span>
+        <span>G: {{ meal.fat_g }}g</span>
+      </div>
+    </div>
+    {% empty %}
+    <p>No hay comidas</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- CENA -->
+<div class="section">
+  <div class="header" onclick="toggle('dinner')">
+    <div class="header-left">
+      <div class="icon">🌙</div>
+      <b>Cena</b>
+    </div>
+    <span class="arrow">⌄</span>
+  </div>
+
+  <div id="dinner" class="content">
+    {% for meal in dinner %}
+    <div class="meal">
+      <div class="meal-name">{{ meal.name }}</div>
+      <div class="meal-calories">{{ meal.calories }} kcal</div>
+      <div class="meal-macros">
+        <span>P: {{ meal.protein_g }}g</span>
+        <span>C: {{ meal.carbs_g }}g</span>
+        <span>G: {{ meal.fat_g }}g</span>
+      </div>
+    </div>
+    {% empty %}
+    <p>No hay comidas</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggle(id) {
+  document.getElementById(id).parentElement.classList.toggle("active");
+}
+</script>
+{% endblock %}
