@@ -328,6 +328,23 @@ class SocialFeedView(View):
         public_meal_plans = meal_plans_qs[:20]
         public_exercises = exercises_qs[:20]
 
+        saved_routine_ids = set()
+        saved_meal_plan_ids = set()
+        saved_exercise_ids = set()
+        if request.user.is_authenticated:
+            saved_routine_ids = set(
+                Routine.objects.filter(user=request.user, source_routine__isnull=False)
+                .values_list("source_routine_id", flat=True)
+            )
+            saved_meal_plan_ids = set(
+                MealPlan.objects.filter(user=request.user, source_meal_plan__isnull=False)
+                .values_list("source_meal_plan_id", flat=True)
+            )
+            saved_exercise_ids = set(
+                FavoriteExercise.objects.filter(user=request.user)
+                .values_list("exercise_id", flat=True)
+            )
+
         selected_routine = None
         routine_already_saved = False
         if selected_routine_id:
@@ -373,6 +390,9 @@ class SocialFeedView(View):
                 "routine_already_saved": routine_already_saved,
                 "meal_plan_already_saved": meal_plan_already_saved,
                 "exercise_already_saved": exercise_already_saved,
+                "saved_routine_ids": saved_routine_ids,
+                "saved_meal_plan_ids": saved_meal_plan_ids,
+                "saved_exercise_ids": saved_exercise_ids,
             },
         )
 

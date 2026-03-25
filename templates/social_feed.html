@@ -163,62 +163,17 @@
   </div>
 </section>
 
-{% if active_tab == 'routines' and selected_routine %}
-<section class="section-card">
-  <div class="section-header">
-    <h3>Detalle de Rutina</h3>
-    <div class="muted">Vista detallada y guardado rapido.</div>
-  </div>
-  <div class="section-body">
-    <article class="detail-card">
-      <h4 class="detail-title">{{ selected_routine.name }}</h4>
-      <div class="social-author">Creada por {{ selected_routine.user.username }}</div>
-      <div class="social-meta">
-        <span>{{ selected_routine.goal|default:"Sin objetivo" }}</span>
-        <span>{{ selected_routine.exercises.count }} ejercicios</span>
-      </div>
-      {% if selected_routine.description %}
-      <p class="muted" style="margin-top:8px;">{{ selected_routine.description }}</p>
-      {% endif %}
-
-      <div class="exercise-list">
-        {% for item in selected_routine.exercises.all %}
-        <div class="exercise-item">
-          <strong>{{ item.sort_order }}. {{ item.exercise.name }}</strong>
-          <span>{{ item.target_sets }} x {{ item.target_reps }} | {{ item.rest_seconds }}s</span>
-        </div>
-        {% endfor %}
-      </div>
-
-      {% if request.user.is_authenticated %}
-      <form class="save-form" method="post" action="{% url 'social-feed' %}">
-        {% csrf_token %}
-        <input type="hidden" name="routine_id" value="{{ selected_routine.id }}">
-        <button type="submit" class="save-btn" {% if routine_already_saved %}disabled{% endif %}>
-          {% if routine_already_saved %}Ya guardada{% else %}Guardar en mis rutinas{% endif %}
-        </button>
-      </form>
-      {% else %}
-      <div class="save-form">
-        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=routines&routine={{ selected_routine.id }}">Inicia sesion para guardar</a>
-      </div>
-      {% endif %}
-    </article>
-  </div>
-</section>
-{% endif %}
-
 {% if active_tab == 'routines' %}
 <section class="section-card">
   <div class="section-header">
     <h3>Rutinas de la comunidad</h3>
-    <div class="muted">Toca una rutina para ver detalle y guardarla.</div>
+    <div class="muted">Toca una rutina para desplegar el detalle sin recargar.</div>
   </div>
   <div class="section-body">
     {% if public_routines %}
     <div class="social-list">
       {% for routine in public_routines %}
-      <a class="social-card" href="{% url 'social-feed' %}?tab=routines&routine={{ routine.id }}">
+      <a class="social-card js-open-detail" href="#" data-detail-id="routine-{{ routine.id }}">
         <div class="social-thumb">🏋️</div>
         <div>
           <strong>{{ routine.name }}</strong>
@@ -236,62 +191,56 @@
     {% endif %}
   </div>
 </section>
-{% elif active_tab == 'meals' %}
-{% if selected_meal_plan %}
-<section class="section-card">
-  <div class="section-header">
-    <h3>Detalle de Comida</h3>
-    <div class="muted">Informacion del plan seleccionado.</div>
-  </div>
-  <div class="section-body">
-    <article class="detail-card">
-      <h4 class="detail-title">{{ selected_meal_plan.name }}</h4>
-      <div class="social-author">Creado por {{ selected_meal_plan.user.username }}</div>
-      <div class="social-meta">
-        <span>{{ selected_meal_plan.items.count }} comidas</span>
-        <span>{{ selected_meal_plan.total_calories }} kcal</span>
-      </div>
-      {% if selected_meal_plan.description %}
-      <p class="muted" style="margin-top:8px;">{{ selected_meal_plan.description }}</p>
-      {% endif %}
 
+<div style="display:none;">
+  {% for routine in public_routines %}
+  <div id="routine-{{ routine.id }}" class="detail-template">
+    <article class="detail-card">
+      <h4 class="detail-title">{{ routine.name }}</h4>
+      <div class="social-author">Creada por {{ routine.user.username }}</div>
+      <div class="social-meta">
+        <span>{{ routine.goal|default:"Sin objetivo" }}</span>
+        <span>{{ routine.exercises.count }} ejercicios</span>
+      </div>
+      {% if routine.description %}
+      <p class="muted" style="margin-top:8px;">{{ routine.description }}</p>
+      {% endif %}
       <div class="exercise-list">
-        {% for item in selected_meal_plan.items.all %}
+        {% for item in routine.exercises.all %}
         <div class="exercise-item">
-          <strong>{{ item.meal.name }}</strong>
-          <span>{{ item.quantity }} porcion | {{ item.meal.calories }} kcal</span>
+          <strong>{{ item.sort_order }}. {{ item.exercise.name }}</strong>
+          <span>{{ item.target_sets }} x {{ item.target_reps }} | {{ item.rest_seconds }}s</span>
         </div>
         {% endfor %}
       </div>
-
       {% if request.user.is_authenticated %}
       <form class="save-form" method="post" action="{% url 'social-feed' %}">
         {% csrf_token %}
-        <input type="hidden" name="meal_plan_id" value="{{ selected_meal_plan.id }}">
-        <button type="submit" class="save-btn" {% if meal_plan_already_saved %}disabled{% endif %}>
-          {% if meal_plan_already_saved %}Ya guardado{% else %}Guardar plan de comida{% endif %}
+        <input type="hidden" name="routine_id" value="{{ routine.id }}">
+        <button type="submit" class="save-btn" {% if routine.id in saved_routine_ids %}disabled{% endif %}>
+          {% if routine.id in saved_routine_ids %}Ya guardada{% else %}Guardar en mis rutinas{% endif %}
         </button>
       </form>
       {% else %}
       <div class="save-form">
-        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=meals&meal={{ selected_meal_plan.id }}">Inicia sesion para guardar</a>
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=routines">Inicia sesion para guardar</a>
       </div>
       {% endif %}
     </article>
   </div>
-</section>
-{% endif %}
-
+  {% endfor %}
+</div>
+{% elif active_tab == 'meals' %}
 <section class="section-card">
   <div class="section-header">
     <h3>Planes de comida de la comunidad</h3>
-    <div class="muted">Toca un plan para ver su card detallada y guardarla.</div>
+    <div class="muted">Toca un plan para desplegar detalle sin recargar.</div>
   </div>
   <div class="section-body">
     {% if public_meal_plans %}
     <div class="social-list">
       {% for meal_plan in public_meal_plans %}
-      <a class="social-card" href="{% url 'social-feed' %}?tab=meals&meal={{ meal_plan.id }}">
+      <a class="social-card js-open-detail" href="#" data-detail-id="meal-{{ meal_plan.id }}">
         <div class="social-thumb">🍽️</div>
         <div>
           <strong>{{ meal_plan.name }}</strong>
@@ -312,56 +261,56 @@
     {% endif %}
   </div>
 </section>
-{% else %}
-{% if selected_exercise %}
-<section class="section-card">
-  <div class="section-header">
-    <h3>Detalle de Ejercicio</h3>
-    <div class="muted">Ejercicio publicado por la comunidad.</div>
-  </div>
-  <div class="section-body">
+
+<div style="display:none;">
+  {% for meal_plan in public_meal_plans %}
+  <div id="meal-{{ meal_plan.id }}" class="detail-template">
     <article class="detail-card">
-      <h4 class="detail-title">{{ selected_exercise.name }}</h4>
-      <div class="social-author">Creado por {{ selected_exercise.user.username|default:"usuario" }}</div>
+      <h4 class="detail-title">{{ meal_plan.name }}</h4>
+      <div class="social-author">Creado por {{ meal_plan.user.username }}</div>
       <div class="social-meta">
-        <span>{{ selected_exercise.muscle_group }}</span>
-        <span>{{ selected_exercise.type }}</span>
+        <span>{{ meal_plan.items.count }} comidas</span>
+        <span>{{ meal_plan.total_calories }} kcal</span>
       </div>
-
-      {% if selected_exercise.display_image_url %}
-      <div style="margin-top: 12px;">
-        <img src="{{ selected_exercise.display_image_url }}" alt="{{ selected_exercise.name }}" style="width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
-      </div>
+      {% if meal_plan.description %}
+      <p class="muted" style="margin-top:8px;">{{ meal_plan.description }}</p>
       {% endif %}
-
+      <div class="exercise-list">
+        {% for item in meal_plan.items.all %}
+        <div class="exercise-item">
+          <strong>{{ item.meal.name }}</strong>
+          <span>{{ item.quantity }} porcion | {{ item.meal.calories }} kcal</span>
+        </div>
+        {% endfor %}
+      </div>
       {% if request.user.is_authenticated %}
       <form class="save-form" method="post" action="{% url 'social-feed' %}">
         {% csrf_token %}
-        <input type="hidden" name="exercise_id" value="{{ selected_exercise.id }}">
-        <button type="submit" class="save-btn" {% if exercise_already_saved %}disabled{% endif %}>
-          {% if exercise_already_saved %}Ya guardado{% else %}Guardar ejercicio{% endif %}
+        <input type="hidden" name="meal_plan_id" value="{{ meal_plan.id }}">
+        <button type="submit" class="save-btn" {% if meal_plan.id in saved_meal_plan_ids %}disabled{% endif %}>
+          {% if meal_plan.id in saved_meal_plan_ids %}Ya guardado{% else %}Guardar plan de comida{% endif %}
         </button>
       </form>
       {% else %}
       <div class="save-form">
-        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=exercises&exercise={{ selected_exercise.id }}">Inicia sesion para guardar</a>
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=meals">Inicia sesion para guardar</a>
       </div>
       {% endif %}
     </article>
   </div>
-</section>
-{% endif %}
-
+  {% endfor %}
+</div>
+{% else %}
 <section class="section-card">
   <div class="section-header">
     <h3>Ejercicios de la comunidad</h3>
-    <div class="muted">Los ejercicios nuevos aparecen aqui automaticamente.</div>
+    <div class="muted">Toca un ejercicio para ver detalle sin recargar.</div>
   </div>
   <div class="section-body">
     {% if public_exercises %}
     <div class="social-list">
       {% for exercise in public_exercises %}
-      <a class="social-card" href="{% url 'social-feed' %}?tab=exercises&exercise={{ exercise.id }}">
+      <a class="social-card js-open-detail" href="#" data-detail-id="exercise-{{ exercise.id }}">
         <div class="social-thumb">
           {% if exercise.display_image_url %}
           <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
@@ -385,5 +334,89 @@
     {% endif %}
   </div>
 </section>
+
+<div style="display:none;">
+  {% for exercise in public_exercises %}
+  <div id="exercise-{{ exercise.id }}" class="detail-template">
+    <article class="detail-card">
+      <h4 class="detail-title">{{ exercise.name }}</h4>
+      <div class="social-author">Creado por {{ exercise.user.username|default:"usuario" }}</div>
+      <div class="social-meta">
+        <span>{{ exercise.muscle_group }}</span>
+        <span>{{ exercise.type }}</span>
+      </div>
+      {% if exercise.display_image_url %}
+      <div style="margin-top: 12px;">
+        <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+      </div>
+      {% endif %}
+      {% if request.user.is_authenticated %}
+      <form class="save-form" method="post" action="{% url 'social-feed' %}">
+        {% csrf_token %}
+        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+        <button type="submit" class="save-btn" {% if exercise.id in saved_exercise_ids %}disabled{% endif %}>
+          {% if exercise.id in saved_exercise_ids %}Ya guardado{% else %}Guardar ejercicio{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="save-form">
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=exercises">Inicia sesion para guardar</a>
+      </div>
+      {% endif %}
+    </article>
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
+
+<div id="detail-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:90;"></div>
+<div id="detail-sheet" style="position:fixed; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#0c1016; border-top-left-radius:18px; border-top-right-radius:18px; border:1px solid rgba(255,255,255,.08); box-shadow:0 -18px 40px rgba(0,0,0,.45); z-index:95; transition:bottom .28s ease; padding:12px 12px calc(12px + env(safe-area-inset-bottom));">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <strong>Detalle</strong>
+    <button id="close-sheet" type="button" style="background:none; border:none; color:#f5f7fb; font-size:20px; cursor:pointer;">×</button>
+  </div>
+  <div id="detail-sheet-content"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const openerLinks = document.querySelectorAll('.js-open-detail');
+    const overlay = document.getElementById('detail-overlay');
+    const sheet = document.getElementById('detail-sheet');
+    const content = document.getElementById('detail-sheet-content');
+    const closeBtn = document.getElementById('close-sheet');
+
+    if (!openerLinks.length || !overlay || !sheet || !content || !closeBtn) {
+      return;
+    }
+
+    function openSheet(detailId) {
+      const template = document.getElementById(detailId);
+      if (!template) return;
+      content.innerHTML = template.innerHTML;
+      overlay.style.display = 'block';
+      sheet.style.bottom = '0';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSheet() {
+      sheet.style.bottom = '-100%';
+      overlay.style.display = 'none';
+      content.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+
+    openerLinks.forEach((link) => {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        openSheet(link.dataset.detailId);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeSheet);
+    overlay.addEventListener('click', closeSheet);
+  })();
+</script>
 {% endblock %}
