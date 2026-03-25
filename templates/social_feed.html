@@ -1,0 +1,389 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Social{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tabs {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .tab-link {
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0f141c;
+    color: #f5f7fb;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .tab-link.active {
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    color: #0c1016;
+    border: none;
+  }
+
+  .social-list {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .social-card,
+  .detail-card {
+    background: #0f141c;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px;
+  }
+
+  .social-card {
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .social-thumb {
+    width: 88px;
+    height: 88px;
+    border-radius: 12px;
+    background: linear-gradient(120deg, rgba(33, 227, 107, .16), rgba(0, 196, 255, .12));
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+  }
+
+  .social-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .social-author {
+    color: var(--accent);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .detail-title {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+  }
+
+  .exercise-list {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .exercise-item {
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .save-form {
+    margin-top: 12px;
+  }
+
+  .save-btn {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    color: #0c1016;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .save-btn[disabled] {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .empty-state {
+    margin-top: 12px;
+    background: #0f141c;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    color: var(--muted);
+    text-align: center;
+    padding: 18px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="hero">
+  <div class="logo"><span>FIT</span>track</div>
+  <div class="chip-time" id="chip-time">SOCIAL</div>
+</header>
+
+{% if messages %}
+<div class="messages">
+  {% for message in messages %}
+  <div class="message {{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section class="section-card">
+  <div class="section-header">
+    <h3>Comunidad FITtrack</h3>
+    <div class="muted">Explora contenido publico de otros usuarios.</div>
+  </div>
+  <div class="section-body">
+    <div class="tabs">
+      <a class="tab-link {% if active_tab == 'routines' %}active{% endif %}" href="{% url 'social-feed' %}?tab=routines">Rutinas</a>
+      <a class="tab-link {% if active_tab == 'meals' %}active{% endif %}" href="{% url 'social-feed' %}?tab=meals">Comidas</a>
+      <a class="tab-link {% if active_tab == 'exercises' %}active{% endif %}" href="{% url 'social-feed' %}?tab=exercises">Ejercicios</a>
+    </div>
+  </div>
+</section>
+
+{% if active_tab == 'routines' and selected_routine %}
+<section class="section-card">
+  <div class="section-header">
+    <h3>Detalle de Rutina</h3>
+    <div class="muted">Vista detallada y guardado rapido.</div>
+  </div>
+  <div class="section-body">
+    <article class="detail-card">
+      <h4 class="detail-title">{{ selected_routine.name }}</h4>
+      <div class="social-author">Creada por {{ selected_routine.user.username }}</div>
+      <div class="social-meta">
+        <span>{{ selected_routine.goal|default:"Sin objetivo" }}</span>
+        <span>{{ selected_routine.exercises.count }} ejercicios</span>
+      </div>
+      {% if selected_routine.description %}
+      <p class="muted" style="margin-top:8px;">{{ selected_routine.description }}</p>
+      {% endif %}
+
+      <div class="exercise-list">
+        {% for item in selected_routine.exercises.all %}
+        <div class="exercise-item">
+          <strong>{{ item.sort_order }}. {{ item.exercise.name }}</strong>
+          <span>{{ item.target_sets }} x {{ item.target_reps }} | {{ item.rest_seconds }}s</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if request.user.is_authenticated %}
+      <form class="save-form" method="post" action="{% url 'social-feed' %}">
+        {% csrf_token %}
+        <input type="hidden" name="routine_id" value="{{ selected_routine.id }}">
+        <button type="submit" class="save-btn" {% if routine_already_saved %}disabled{% endif %}>
+          {% if routine_already_saved %}Ya guardada{% else %}Guardar en mis rutinas{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="save-form">
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=routines&routine={{ selected_routine.id }}">Inicia sesion para guardar</a>
+      </div>
+      {% endif %}
+    </article>
+  </div>
+</section>
+{% endif %}
+
+{% if active_tab == 'routines' %}
+<section class="section-card">
+  <div class="section-header">
+    <h3>Rutinas de la comunidad</h3>
+    <div class="muted">Toca una rutina para ver detalle y guardarla.</div>
+  </div>
+  <div class="section-body">
+    {% if public_routines %}
+    <div class="social-list">
+      {% for routine in public_routines %}
+      <a class="social-card" href="{% url 'social-feed' %}?tab=routines&routine={{ routine.id }}">
+        <div class="social-thumb">🏋️</div>
+        <div>
+          <strong>{{ routine.name }}</strong>
+          <div class="social-author">por {{ routine.user.username }}</div>
+          <div class="social-meta">
+            <span>{{ routine.goal|default:"Sin objetivo" }}</span>
+            <span>{{ routine.exercises.count }} ejercicios</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No hay rutinas publicas disponibles.</div>
+    {% endif %}
+  </div>
+</section>
+{% elif active_tab == 'meals' %}
+{% if selected_meal_plan %}
+<section class="section-card">
+  <div class="section-header">
+    <h3>Detalle de Comida</h3>
+    <div class="muted">Informacion del plan seleccionado.</div>
+  </div>
+  <div class="section-body">
+    <article class="detail-card">
+      <h4 class="detail-title">{{ selected_meal_plan.name }}</h4>
+      <div class="social-author">Creado por {{ selected_meal_plan.user.username }}</div>
+      <div class="social-meta">
+        <span>{{ selected_meal_plan.items.count }} comidas</span>
+        <span>{{ selected_meal_plan.total_calories }} kcal</span>
+      </div>
+      {% if selected_meal_plan.description %}
+      <p class="muted" style="margin-top:8px;">{{ selected_meal_plan.description }}</p>
+      {% endif %}
+
+      <div class="exercise-list">
+        {% for item in selected_meal_plan.items.all %}
+        <div class="exercise-item">
+          <strong>{{ item.meal.name }}</strong>
+          <span>{{ item.quantity }} porcion | {{ item.meal.calories }} kcal</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if request.user.is_authenticated %}
+      <form class="save-form" method="post" action="{% url 'social-feed' %}">
+        {% csrf_token %}
+        <input type="hidden" name="meal_plan_id" value="{{ selected_meal_plan.id }}">
+        <button type="submit" class="save-btn" {% if meal_plan_already_saved %}disabled{% endif %}>
+          {% if meal_plan_already_saved %}Ya guardado{% else %}Guardar plan de comida{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="save-form">
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=meals&meal={{ selected_meal_plan.id }}">Inicia sesion para guardar</a>
+      </div>
+      {% endif %}
+    </article>
+  </div>
+</section>
+{% endif %}
+
+<section class="section-card">
+  <div class="section-header">
+    <h3>Planes de comida de la comunidad</h3>
+    <div class="muted">Toca un plan para ver su card detallada y guardarla.</div>
+  </div>
+  <div class="section-body">
+    {% if public_meal_plans %}
+    <div class="social-list">
+      {% for meal_plan in public_meal_plans %}
+      <a class="social-card" href="{% url 'social-feed' %}?tab=meals&meal={{ meal_plan.id }}">
+        <div class="social-thumb">🍽️</div>
+        <div>
+          <strong>{{ meal_plan.name }}</strong>
+          <div class="social-author">por {{ meal_plan.user.username }}</div>
+          <div class="social-meta">
+            <span>{{ meal_plan.items.count }} comidas</span>
+            <span>{{ meal_plan.total_calories }} kcal</span>
+          </div>
+          {% if meal_plan.description %}
+          <div class="muted" style="margin-top:6px;">{{ meal_plan.description|truncatewords:12 }}</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No hay planes de comida publicos disponibles.</div>
+    {% endif %}
+  </div>
+</section>
+{% else %}
+{% if selected_exercise %}
+<section class="section-card">
+  <div class="section-header">
+    <h3>Detalle de Ejercicio</h3>
+    <div class="muted">Ejercicio publicado por la comunidad.</div>
+  </div>
+  <div class="section-body">
+    <article class="detail-card">
+      <h4 class="detail-title">{{ selected_exercise.name }}</h4>
+      <div class="social-author">Creado por {{ selected_exercise.user.username|default:"usuario" }}</div>
+      <div class="social-meta">
+        <span>{{ selected_exercise.muscle_group }}</span>
+        <span>{{ selected_exercise.type }}</span>
+      </div>
+
+      {% if selected_exercise.display_image_url %}
+      <div style="margin-top: 12px;">
+        <img src="{{ selected_exercise.display_image_url }}" alt="{{ selected_exercise.name }}" style="width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+      </div>
+      {% endif %}
+
+      {% if request.user.is_authenticated %}
+      <form class="save-form" method="post" action="{% url 'social-feed' %}">
+        {% csrf_token %}
+        <input type="hidden" name="exercise_id" value="{{ selected_exercise.id }}">
+        <button type="submit" class="save-btn" {% if exercise_already_saved %}disabled{% endif %}>
+          {% if exercise_already_saved %}Ya guardado{% else %}Guardar ejercicio{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="save-form">
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=exercises&exercise={{ selected_exercise.id }}">Inicia sesion para guardar</a>
+      </div>
+      {% endif %}
+    </article>
+  </div>
+</section>
+{% endif %}
+
+<section class="section-card">
+  <div class="section-header">
+    <h3>Ejercicios de la comunidad</h3>
+    <div class="muted">Los ejercicios nuevos aparecen aqui automaticamente.</div>
+  </div>
+  <div class="section-body">
+    {% if public_exercises %}
+    <div class="social-list">
+      {% for exercise in public_exercises %}
+      <a class="social-card" href="{% url 'social-feed' %}?tab=exercises&exercise={{ exercise.id }}">
+        <div class="social-thumb">
+          {% if exercise.display_image_url %}
+          <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+          {% else %}
+          💪
+          {% endif %}
+        </div>
+        <div>
+          <strong>{{ exercise.name }}</strong>
+          <div class="social-author">por {{ exercise.user.username|default:"usuario" }}</div>
+          <div class="social-meta">
+            <span>{{ exercise.muscle_group }}</span>
+            <span>{{ exercise.type }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No hay ejercicios publicos disponibles.</div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

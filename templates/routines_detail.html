@@ -21,6 +21,41 @@
     .exercise-item img,.placeholder { width:84px; height:84px; border-radius:16px; object-fit:cover; display:block; background:linear-gradient(120deg, rgba(33,227,107,.16), rgba(0,196,255,.12)); }
     .days { display:flex; gap:8px; flex-wrap:wrap; }
     .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:rgba(33,227,107,.12); color:var(--accent); font-size:12px; font-weight:700; }
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0b0f15;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px 12px;
+      z-index: 50;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .nav-item {
+      color: #9aa3b5;
+      text-decoration: none;
+      font-size: 12px;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+    .nav-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
   </style>
 </head>
 <body>
@@ -61,5 +96,6 @@
       </div>
     </section>
   </main>
+  {% include "dashboard/partials/bottom_nav.html" %}
 </body>
 </html>

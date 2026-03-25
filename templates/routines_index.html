@@ -96,6 +96,41 @@
       font-weight:800;
       white-space:nowrap;
     }
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0b0f15;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px 12px;
+      z-index: 50;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .nav-item {
+      color: #9aa3b5;
+      text-decoration: none;
+      font-size: 12px;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+    .nav-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
     @media (max-width:880px) { .layout { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -218,5 +253,6 @@
       </article>
     </section>
   </main>
+  {% include "dashboard/partials/bottom_nav.html" %}
 </body>
 </html>

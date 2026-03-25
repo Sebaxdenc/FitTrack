@@ -2,6 +2,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
 
@@ -14,7 +15,7 @@ from .exceptions import (
     
 )
 from .forms import LoginForm, RegistrationForm
-from .models import RoutineSchedule
+from .models import Exercise, FavoriteExercise, MealItem, MealPlan, Routine, RoutineExercise, RoutineSchedule
 from .routine_forms import ExerciseCreateForm, RoutineCreateForm
 from .selectors import (
     get_todays_routine_schedule,
@@ -299,3 +300,192 @@ def _extract_routine_exercises(request):
         )
 
     return exercise_items
+
+
+class SocialFeedView(View):
+    """
+    Muestra el feed social con rutinas y planes de comidas públicos.
+    No requiere autenticación pero lo recomendado es autenticarse para ver detalles.
+    """
+    template_name = "social_feed.html"
+
+    def get(self, request):
+        tab = request.GET.get("tab", "routines")
+        selected_routine_id = request.GET.get("routine")
+        selected_meal_plan_id = request.GET.get("meal")
+        selected_exercise_id = request.GET.get("exercise")
+
+        routines_qs = Routine.objects.filter(is_public=True).select_related("user").prefetch_related("exercises__exercise").order_by("-created_at")
+        meal_plans_qs = MealPlan.objects.filter(is_public=True).select_related("user").prefetch_related("items__meal").order_by("-created_at")
+        exercises_qs = Exercise.objects.exclude(user__isnull=True).select_related("user").order_by("-id")
+
+        if request.user.is_authenticated:
+            routines_qs = routines_qs.exclude(user=request.user)
+            meal_plans_qs = meal_plans_qs.exclude(user=request.user)
+            exercises_qs = exercises_qs.exclude(user=request.user)
+
+        public_routines = routines_qs[:20]
+        public_meal_plans = meal_plans_qs[:20]
+        public_exercises = exercises_qs[:20]
+
+        selected_routine = None
+        routine_already_saved = False
+        if selected_routine_id:
+            selected_routine = routines_qs.filter(id=selected_routine_id).first()
+            if selected_routine and request.user.is_authenticated:
+                routine_already_saved = Routine.objects.filter(
+                    user=request.user,
+                    source_routine=selected_routine,
+                ).exists()
+
+        selected_meal_plan = None
+        meal_plan_already_saved = False
+        if selected_meal_plan_id:
+            selected_meal_plan = meal_plans_qs.filter(id=selected_meal_plan_id).first()
+            if selected_meal_plan and request.user.is_authenticated:
+                meal_plan_already_saved = MealPlan.objects.filter(
+                    user=request.user,
+                    source_meal_plan=selected_meal_plan,
+                ).exists()
+
+        selected_exercise = None
+        exercise_already_saved = False
+        if selected_exercise_id:
+            selected_exercise = exercises_qs.filter(id=selected_exercise_id).first()
+            if selected_exercise and request.user.is_authenticated:
+                exercise_already_saved = FavoriteExercise.objects.filter(
+                    user=request.user,
+                    exercise=selected_exercise,
+                ).exists()
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "public_routines": public_routines,
+                "public_meal_plans": public_meal_plans,
+                "public_exercises": public_exercises,
+                "is_authenticated": request.user.is_authenticated,
+                "active_tab": tab if tab in {"routines", "meals", "exercises"} else "routines",
+                "selected_routine": selected_routine,
+                "selected_meal_plan": selected_meal_plan,
+                "selected_exercise": selected_exercise,
+                "routine_already_saved": routine_already_saved,
+                "meal_plan_already_saved": meal_plan_already_saved,
+                "exercise_already_saved": exercise_already_saved,
+            },
+        )
+
+    def post(self, request):
+        routine_id = request.POST.get("routine_id")
+        meal_plan_id = request.POST.get("meal_plan_id")
+        exercise_id = request.POST.get("exercise_id")
+
+        if meal_plan_id:
+            if not request.user.is_authenticated:
+                messages.error(request, "Debes iniciar sesion para guardar un plan de comida.")
+                return redirect(f"/login/?next=/social/?tab=meals&meal={meal_plan_id}")
+
+            source_plan = MealPlan.objects.filter(id=meal_plan_id, is_public=True).prefetch_related("items").first()
+            if not source_plan:
+                messages.error(request, "El plan de comida no existe o ya no esta disponible.")
+                return redirect("/social/?tab=meals")
+
+            if source_plan.user_id == request.user.id:
+                messages.info(request, "Este plan de comida ya es tuyo.")
+                return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+            if MealPlan.objects.filter(user=request.user, source_meal_plan=source_plan).exists():
+                messages.info(request, "Ya guardaste este plan de comida.")
+                return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+            with transaction.atomic():
+                cloned_plan = MealPlan.objects.create(
+                    user=request.user,
+                    source_meal_plan=source_plan,
+                    name=f"{source_plan.name} (Guardado)",
+                    description=source_plan.description,
+                    is_public=False,
+                )
+
+                meal_items = [
+                    MealItem(
+                        meal_plan=cloned_plan,
+                        meal=item.meal,
+                        quantity=item.quantity,
+                        meal_type=item.meal_type,
+                        sort_order=item.sort_order,
+                    )
+                    for item in source_plan.items.all()
+                ]
+                MealItem.objects.bulk_create(meal_items)
+
+            messages.success(request, "Plan de comida guardado correctamente.")
+            return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+        if exercise_id:
+            if not request.user.is_authenticated:
+                messages.error(request, "Debes iniciar sesion para guardar un ejercicio.")
+                return redirect(f"/login/?next=/social/?tab=exercises&exercise={exercise_id}")
+
+            source_exercise = Exercise.objects.filter(id=exercise_id).first()
+            if not source_exercise:
+                messages.error(request, "El ejercicio no existe o ya no esta disponible.")
+                return redirect("/social/?tab=exercises")
+
+            if source_exercise.user_id == request.user.id:
+                messages.info(request, "Este ejercicio ya es tuyo.")
+                return redirect(f"/social/?tab=exercises&exercise={source_exercise.id}")
+
+            favorite, created = FavoriteExercise.objects.get_or_create(
+                user=request.user,
+                exercise=source_exercise,
+            )
+            if created:
+                messages.success(request, "Ejercicio guardado en favoritos.")
+            else:
+                messages.info(request, "Este ejercicio ya esta guardado en favoritos.")
+            return redirect(f"/social/?tab=exercises&exercise={source_exercise.id}")
+
+        if not request.user.is_authenticated:
+            messages.error(request, "Debes iniciar sesion para guardar una rutina.")
+            return redirect(f"/login/?next=/social/?tab=routines&routine={routine_id}")
+
+        source = Routine.objects.filter(id=routine_id, is_public=True).prefetch_related("exercises").first()
+        if not source:
+            messages.error(request, "La rutina no existe o ya no esta disponible.")
+            return redirect("social-feed")
+
+        if source.user_id == request.user.id:
+            messages.info(request, "Esta rutina ya es tuya.")
+            return redirect(f"/social/?tab=routines&routine={source.id}")
+
+        if Routine.objects.filter(user=request.user, source_routine=source).exists():
+            messages.info(request, "Ya guardaste esta rutina en tu lista.")
+            return redirect(f"/social/?tab=routines&routine={source.id}")
+
+        with transaction.atomic():
+            cloned = Routine.objects.create(
+                user=request.user,
+                name=f"{source.name} (Guardada)",
+                source_routine=source,
+                goal=source.goal,
+                description=source.description,
+                is_public=False,
+            )
+
+            routine_exercises = [
+                RoutineExercise(
+                    routine=cloned,
+                    exercise=item.exercise,
+                    sort_order=item.sort_order,
+                    target_sets=item.target_sets,
+                    target_reps=item.target_reps,
+                    rest_seconds=item.rest_seconds,
+                )
+                for item in source.exercises.all()
+            ]
+            RoutineExercise.objects.bulk_create(routine_exercises)
+
+        messages.success(request, "Rutina guardada en tu lista de rutinas.")
+        return redirect(f"/social/?tab=routines&routine={source.id}")
