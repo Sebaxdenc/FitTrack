@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Nueva rutina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0c1016; --muted:#9aa3b5; --accent:#21e36b; --card:rgba(255,255,255,0.04); --shadow:0 18px 40px rgba(0,0,0,0.35); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:'Manrope',system-ui,sans-serif; background:radial-gradient(120% 120% at 20% 20%, rgba(0,196,255,.12), transparent 45%), radial-gradient(120% 120% at 80% 0%, rgba(33,227,107,.12), transparent 40%), var(--bg); color:#f5f7fb; padding:28px 16px 96px; }
+    .shell { width:min(1120px,100%); margin:0 auto; }
+    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:20px; box-shadow:var(--shadow); padding:20px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
+    .brand { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; }
+    .brand span { color:var(--accent); }
+    .muted { color:var(--muted); }
+    .layout { display:grid; grid-template-columns:320px 1fr; gap:16px; }
+    form,.exercise-grid { display:grid; gap:12px; }
+    label { font-size:13px; color:var(--muted); display:block; margin-bottom:6px; }
+    input[type="text"],input[type="number"] { width:100%; background:#0f141c; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; color:#f5f7fb; }
+    .btn { border:none; border-radius:14px; cursor:pointer; padding:12px 16px; font-weight:800; background:linear-gradient(120deg, #21e36b, #00c4ff); color:#0c1016; }
+    .exercise-grid { grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+    .exercise-card { background:#101722; border:1px solid rgba(255,255,255,.06); border-radius:18px; overflow:hidden; }
+    .exercise-card img,.placeholder { width:100%; height:150px; object-fit:cover; display:block; background:linear-gradient(120deg, rgba(33,227,107,.16), rgba(0,196,255,.12)); }
+    .exercise-body { padding:14px; display:grid; gap:10px; }
+    .checkline { display:flex; align-items:center; gap:8px; font-weight:700; }
+    .split { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .messages { margin-bottom:14px; display:grid; gap:8px; }
+    .message { padding:10px 12px; border-radius:12px; font-size:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
+    .days { display:grid; gap:8px; }
+    .days label { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); color:#f5f7fb; margin-bottom:0; }
+    .empty-state { padding:20px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); color:var(--muted); background:rgba(255,255,255,.02); }
+    @media (max-width:900px) { .layout { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <div class="brand"><span>FIT</span>track</div>
+        <div class="muted">Une ejercicios, define repeticiones y asigna dias de la semana.</div>
+      </div>
+      <a href="{% url 'routine-list' %}" style="color:#f5f7fb;text-decoration:none;">Volver a rutinas</a>
+    </section>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <form method="post" class="layout">
+      {% csrf_token %}
+      <aside class="card">
+        <h2>Datos base</h2>
+        <div><label for="{{ form.name.id_for_label }}">Nombre</label>{{ form.name }}</div>
+        <div><label for="{{ form.goal.id_for_label }}">Objetivo</label>{{ form.goal }}</div>
+        <div><label for="{{ form.is_public.id_for_label }}">Visibilidad</label>{{ form.is_public }}</div>
+        <div><label>Dias asignados</label><div class="days">{{ form.scheduled_days }}</div></div>
+        <button class="btn" type="submit">Guardar rutina</button>
+      </aside>
+      <section class="card">
+        <h2>Selecciona ejercicios</h2>
+        <p class="muted">Marca los ejercicios que entran en la rutina y define orden, series, repeticiones y descanso.</p>
+        {% if exercise_choices %}
+          <div class="exercise-grid">
+            {% for exercise in exercise_choices %}
+              <article class="exercise-card">
+                {% if exercise.display_image_url %}
+                  <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}">
+                {% else %}
+                  <div class="placeholder"></div>
+                {% endif %}
+                <div class="exercise-body">
+                  <label class="checkline"><input type="checkbox" name="selected_exercise_{{ exercise.id }}"><span>{{ exercise.name }}</span></label>
+                  <div class="muted">{{ exercise.muscle_group }} | {{ exercise.type }}</div>
+                  <div class="split">
+                    <div><label>Orden</label><input type="number" min="1" name="sort_order_{{ exercise.id }}" value="{{ forloop.counter }}"></div>
+                    <div><label>Series</label><input type="number" min="1" name="target_sets_{{ exercise.id }}" value="3"></div>
+                  </div>
+                  <div class="split">
+                    <div><label>Reps</label><input type="number" min="1" name="target_reps_{{ exercise.id }}" value="10"></div>
+                    <div><label>Descanso seg</label><input type="number" min="0" name="rest_seconds_{{ exercise.id }}" value="60"></div>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">Necesitas crear ejercicios primero. Ve a la seccion de ejercicios y luego vuelve para armar la rutina.</div>
+        {% endif %}
+      </section>
+    </form>
+  </main>
+</body>
+</html>

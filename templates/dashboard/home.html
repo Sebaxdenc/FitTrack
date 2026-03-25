@@ -1,0 +1,84 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<header class="hero">
+  <div class="logo"><span>FIT</span>track</div>
+  <div class="chip-time" id="chip-time">--</div>
+</header>
+
+{% if messages %}
+<div class="messages">
+  {% for message in messages %}
+  <div class="message {{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section class="section-card">
+  <div class="section-header">
+    <h3>Dinner</h3>
+    <span class="muted">{{ meal.time_range }}</span>
+  </div>
+  <div class="section-body">
+    <div class="hero-image">
+      <div>
+        <h4>{{ meal.title }}</h4>
+        <p>{{ meal.subtitle }}</p>
+      </div>
+    </div>
+    <div class="tagline">"{{ meal.subtitle }}"</div>
+  </div>
+</section>
+
+<section class="section-card">
+  <div class="section-header">
+    {% if routine %}
+    <div>
+      <h3>{{ routine.name|upper }}</h3>
+      {% with routine.goal|default:"Rutina asignada para hoy" as goal_text %}
+      <div class="muted">
+        {{ routine_schedule.get_day_of_week_display }} | {{ goal_text }}
+      </div>
+      {% endwith %}
+
+    </div>
+    {% else %}
+    <div>
+      <h3>SIN RUTINA HOY</h3>
+      <div class="muted">Asigna una rutina desde la seccion de rutinas.</div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="section-body">
+    <div class="quick-links">
+      <a class="quick-link" href="{% url 'routine-list' %}">Ver rutinas</a>
+      <a class="quick-link primary" href="{% url 'routine-create' %}">Nueva rutina</a>
+    </div>
+    {% if routine %}
+    <div class="grid-3">
+      {% for routine_exercise in routine_exercises %}
+      <div class="tile">
+        <strong>{{ routine_exercise.exercise.name }}</strong>
+        <span>{{ routine_exercise.target_sets }} series x {{ routine_exercise.target_reps }} reps</span>
+        <span>Descanso {{ routine_exercise.rest_seconds }}s</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cta-row">
+      <span>{{ routine_exercises|length }} ejercicios para hoy</span>
+      <a href="{% url 'routine-detail' routine.id %}">Ver detalles</a>
+    </div>
+    {% else %}
+    <div class="empty-state">Crea una rutina y asignala a un dia de la semana para verla aqui.</div>
+    <div class="cta-row">
+      <span>Tu agenda semanal vive en FITtrack</span>
+      <a href="{% url 'routine-create' %}">Crear rutina</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

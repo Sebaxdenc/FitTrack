@@ -1,0 +1,24 @@
+.env
+*.env
+__pycache__/
+*.py[cod]
+*$py.class
+media/
+db.sqlite3
+db.sqlite3-journal
+venv/
+env/
+.venv/
+ENV/
+# Coverage
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+staticfiles

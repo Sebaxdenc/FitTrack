@@ -34,9 +34,17 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Exercise.objects.all()
+        if self.request.user.is_authenticated:
+            return queryset.filter(user=self.request.user)
+        return queryset.none()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
@@ -107,20 +115,3 @@ class FavoriteMealViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-# Template views
-def home_view(request):
-    """
-    Vista principal de la aplicación.
-    Muestra información general y enlaces a las principales secciones.
-    """
-    return render(request, 'home.html')
-
-
-def feed_view(request):
-    """
-    Vista del feed social donde los usuarios pueden ver
-    y compartir rutinas y planes de la comunidad.
-    """
-    return render(request, 'feed.html')

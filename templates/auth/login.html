@@ -1,0 +1,47 @@
+{% extends "auth/base.html" %}
+
+{% block title %}FITtrack | Inicio de sesion{% endblock %}
+{% block hero_title %}Entrena con orden. Vuelve a tu plan en segundos.{% endblock %}
+{% block hero_text %}Inicia sesion para ver tu rutina del dia, tus ejercicios guardados y el progreso que ya vienes construyendo.{% endblock %}
+
+{% block panel %}
+  <div class="eyebrow">Inicio de sesion</div>
+  <h3>Bienvenido de nuevo</h3>
+  <p>Accede con tu usuario para continuar donde lo dejaste.</p>
+
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+
+    <div>
+      <label for="{{ form.username.id_for_label }}">Usuario</label>
+      {{ form.username }}
+      {% if form.username.errors %}<div class="helper">{{ form.username.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div>
+      <label for="{{ form.password.id_for_label }}">Contrasena</label>
+      {{ form.password }}
+      {% if form.password.errors %}<div class="helper">{{ form.password.errors.0 }}</div>{% endif %}
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="helper">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <button class="btn btn-primary" type="submit">Entrar a FITtrack</button>
+  </form>
+
+  <div class="footer-links">
+    <span>Aun no tienes cuenta? <a href="{% url 'auth-register' %}">Crear cuenta</a></span>
+    <a href="{% url 'landing' %}">Volver al inicio</a>
+  </div>
+{% endblock %}
