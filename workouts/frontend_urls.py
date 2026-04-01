@@ -12,6 +12,8 @@ from .frontend_views import (
     RoutineListView,
     StatsView,
     DietView,
+    SocialFeedView,
+    StatsView
 )
 
 urlpatterns = [
@@ -38,4 +40,6 @@ urlpatterns = [
     path("profile/", StatsView.as_view(), name="profile-view"),
     path("profile/", StatsView.as_view(), name="profile-view-en"),
     path("diet/", DietView.as_view(), name="diet"),
+    path("social/", SocialFeedView.as_view(), name="social-feed"),
+    path("sociales/", SocialFeedView.as_view(), name="social-feed-es"),
 ]

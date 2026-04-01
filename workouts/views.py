@@ -8,6 +8,7 @@ from .models import (
     FavoriteExercise,
     FavoriteMeal,
     Meal,
+    MealPlan,
     Routine,
 )
 
@@ -16,6 +17,7 @@ from .serializers import (
     FavoriteExerciseSerializer,
     FavoriteMealSerializer,
     MealSerializer,
+    MealPlanSerializer,
     RoutineSerializer,
 )
 
@@ -114,3 +116,31 @@ class FavoriteMealViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+# ---------------------------------------------------
+# 🌍 SOCIAL FEED
+# ---------------------------------------------------
+
+class SocialRoutineViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Lista solo rutinas públicas para el feed social.
+    Todos los usuarios (autenticados o no) pueden ver las rutinas públicas.
+    """
+    serializer_class = RoutineSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return Routine.objects.filter(is_public=True).prefetch_related("exercises").order_by("-created_at")
+
+
+class SocialMealPlanViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Lista solo planes de comidas públicos para el feed social.
+    Todos los usuarios (autenticados o no) pueden ver los planes públicos.
+    """
+    serializer_class = MealPlanSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return MealPlan.objects.filter(is_public=True).prefetch_related("items").order_by("-created_at")
