@@ -61,6 +61,8 @@ class Meal(models.Model):
     protein_g = models.IntegerField()
     fat_g = models.IntegerField()
     is_predefined = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='meals/', null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True)
 
     category = models.ForeignKey(
         MealCategory,

@@ -2,7 +2,6 @@
     <div class="nav-grid">
 
         <!-- INICIO -->
-        <a class="nav-item {% if request.path == '/home/' %}active{% endif %}" href="{% url 'dashboard-home' %}">
         <a class="nav-item {% if request.resolver_match.url_name == 'dashboard-home' %}active{% endif %}" href="{% url 'dashboard-home' %}">
             <svg viewBox="0 0 24 24">
                 <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6.5h-5V21H5a1 1 0 0 1-1-1z" />
@@ -17,18 +16,12 @@
             </svg>
             <span>Dieta</span>
         </a>
-
-        <!-- RUTINAS -->
-        <a class="nav-item {% if 'rutinas' in request.path or 'routines' in request.path %}active{% endif %}" href="{% url 'routine-list' %}">
         <a class="nav-item {% if request.resolver_match.url_name == 'routine-list' or request.resolver_match.url_name == 'routine-list-en' or request.resolver_match.url_name == 'routine-create' or request.resolver_match.url_name == 'routine-create-en' or request.resolver_match.url_name == 'routine-detail' or request.resolver_match.url_name == 'routine-detail-en' %}active{% endif %}" href="{% url 'routine-list' %}">
             <svg viewBox="0 0 24 24">
                 <path d="M5 6h4l2 4 2-4h4l-3 6 3 6h-4l-2-4-2 4H5l3-6z" />
             </svg>
             <span>Rutinas</span>
         </a>
-
-        <!-- SOCIAL -->
-        <a class="nav-item" href="#">
         <a class="nav-item {% if request.resolver_match.url_name == 'social-feed' or request.resolver_match.url_name == 'social-feed-es' %}active{% endif %}" href="{% url 'social-feed' %}">
             <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4" />
@@ -36,9 +29,6 @@
             </svg>
             <span>Social</span>
         </a>
-
-        <!-- PERFIL -->
-        <a class="nav-item {% if request.path == '/profile/' %}active{% endif %}" href="{% url 'profile-view' %}">
         <a class="nav-item {% if request.resolver_match.url_name == 'profile-view' or request.resolver_match.url_name == 'profile-view-en' %}active{% endif %}" href="{% url 'profile-view' %}">
             <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="7" r="4" />

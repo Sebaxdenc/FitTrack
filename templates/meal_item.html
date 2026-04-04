@@ -1,0 +1,30 @@
+{% load static %}
+
+<div class="meal">
+
+  {% if meal.image %}
+    <img src="{{ meal.image.url }}" class="meal-img">
+  {% elif meal.image_url %}
+    <img src="{{ meal.image_url }}" class="meal-img">
+  {% else %}
+    <img src="{% static 'images/default_meal.jpg' %}" class="meal-img">
+  {% endif %}
+
+  <div class="meal-info">
+    <div class="meal-name">{{ meal.name }}</div>
+    <div class="meal-calories">{{ meal.calories }} kcal</div>
+    <div class="meal-macros">
+      <span>P: {{ meal.protein_g }}g</span>
+      <span>C: {{ meal.carbs_g }}g</span>
+      <span>G: {{ meal.fat_g }}g</span>
+    </div>
+  </div>
+
+    <!-- BOTÓN FAVORITO -->
+  <button class="favorite-btn {% if meal.id in favorite_ids %}active{% endif %}" data-meal-id="{{ meal.id }}">
+    <span class="heart">
+      {% if meal.id in favorite_ids %}♥{% else %}♡{% endif %}
+    </span>
+  </button>
+
+</div>

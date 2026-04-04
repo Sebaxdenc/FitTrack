@@ -2,10 +2,12 @@ import json
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
-from .models import Meal
+from .models import Meal, FavoriteMeal 
+from .forms import MealForm
 
 from .exceptions import (
     ExerciseAccessDeniedError,
@@ -27,7 +29,6 @@ from .selectors import (
     get_user_stats
 )
 from .services import create_exercise, create_routine, delete_exercise, delete_routine
-
 
 class LoginView(View):
     template_name = "auth/login.html"
@@ -302,16 +303,6 @@ def _extract_routine_exercises(request):
 
     return exercise_items
 
-class DietView(LoginRequiredMixin, View):
-    template_name = "diet.html"
-
-    def get(self, request):
-        return render(request, self.template_name, {
-            "breakfast": Meal.objects.filter(is_predefined=True, category__name="Desayuno"),
-            "lunch": Meal.objects.filter(is_predefined=True, category__name="Almuerzo"),
-            "dinner": Meal.objects.filter(is_predefined=True, category__name="Cena"),
-        })
-
 class SocialFeedView(View):
     """
     Muestra el feed social con rutinas y planes de comidas públicos.
@@ -519,3 +510,37 @@ class SocialFeedView(View):
 
         messages.success(request, "Rutina guardada en tu lista de rutinas.")
         return redirect(f"/social/?tab=routines&routine={source.id}")
+
+
+class DietView(LoginRequiredMixin, View):
+    template_name = "diet.html"
+
+    def get(self, request):
+        breakfast = Meal.objects.filter(category__name="Desayuno")
+        lunch = Meal.objects.filter(category__name="Almuerzo")
+        dinner = Meal.objects.filter(category__name="Cena")
+
+        favorite_relations = FavoriteMeal.objects.filter(user=request.user)
+        favorite_meals = [fav.meal for fav in favorite_relations]
+        favorite_ids = {meal.id for meal in favorite_meals}
+
+        form = MealForm()
+
+        return render(request, self.template_name, {
+            "breakfast": breakfast,
+            "lunch": lunch,
+            "dinner": dinner,
+            "favorite_meals": favorite_meals,
+            "favorite_ids": favorite_ids,
+            "form": form
+        })
+
+@login_required
+def add_meal(request):
+    if request.method == 'POST':
+        form = MealForm(request.POST, request.FILES)
+        if form.is_valid():
+            meal = form.save(commit=False)
+            meal.user = request.user
+            meal.save()
+    return redirect('diet')

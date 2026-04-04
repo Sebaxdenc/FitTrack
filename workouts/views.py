@@ -66,11 +66,21 @@ class MealViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
         meal = self.get_object()
-        FavoriteMeal.objects.get_or_create(
+
+        favorite = FavoriteMeal.objects.filter(
             user=request.user,
             meal=meal
-        )
-        return Response({"status": "favorited"})
+        ).first()
+
+        if favorite:
+            favorite.delete()
+            return Response({"status": "removed"})
+        else:
+            FavoriteMeal.objects.create(
+                user=request.user,
+                meal=meal
+            )
+            return Response({"status": "favorited"})
 
 
 class RoutineViewSet(viewsets.ModelViewSet):

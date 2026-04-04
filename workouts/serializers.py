@@ -338,9 +338,6 @@ class EquipmentRecommendationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EquipmentRecommendation
         fields = ["id", "name", "category", "description", "link"]
-<<<<<<< HEAD
-        read_only_fields = ["id"]
-=======
         read_only_fields = ["id"]
 
 
@@ -390,4 +387,3 @@ class MealPlanSerializer(serializers.ModelSerializer):
 
     def get_total_calories(self, obj):
         return obj.total_calories()
->>>>>>> origin/dev
