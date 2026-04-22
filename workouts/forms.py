@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 
 from .models import Profile
+from .models import Meal
 
 
 User = get_user_model()
@@ -84,3 +85,29 @@ class RegistrationForm(forms.ModelForm):
                     "id": f"reg_{name}",
                 }
             )
+
+
+class MealForm(forms.ModelForm):
+    class Meta:
+        model = Meal
+        fields = [
+            'name',
+            'calories',
+            'protein_g',
+            'carbs_g',
+            'fat_g',
+            'category',
+            'image',
+            'image_url'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._apply_styles()
+
+    def _apply_styles(self):
+        for name, field in self.fields.items():
+            field.widget.attrs.update({
+                "class": "input-control",
+                "placeholder": field.label,
+            })

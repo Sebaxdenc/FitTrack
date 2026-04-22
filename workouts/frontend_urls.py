@@ -10,7 +10,11 @@ from .frontend_views import (
     RoutineDeleteView,
     RoutineDetailView,
     RoutineListView,
-    StatsView
+    StatsView,
+    DietView,
+    SocialFeedView,
+    StatsView,
+    add_meal
 )
 
 urlpatterns = [
@@ -36,4 +40,8 @@ urlpatterns = [
     path("routines/<int:routine_id>/delete/", RoutineDeleteView.as_view(), name="routine-delete-en"),
     path("profile/", StatsView.as_view(), name="profile-view"),
     path("profile/", StatsView.as_view(), name="profile-view-en"),
+    path('diet/', DietView.as_view(), name='diet'),
+    path("social/", SocialFeedView.as_view(), name="social-feed"),
+    path("sociales/", SocialFeedView.as_view(), name="social-feed-es"),
+    path('add-meal/', add_meal, name='add_meal'),
 ]
