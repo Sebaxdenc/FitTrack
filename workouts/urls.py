@@ -9,6 +9,7 @@ from .views import (
     RoutineViewSet,
     SocialRoutineViewSet,
     SocialMealPlanViewSet,
+    AIRecommendationsView,
 )
 
 router = DefaultRouter()
@@ -22,4 +23,5 @@ router.register(r'social/meal-plans', SocialMealPlanViewSet, basename='social-me
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('ai/recommendations/', AIRecommendationsView.as_view(), name='ai-recommendations'),
 ]
