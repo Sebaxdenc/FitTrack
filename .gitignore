@@ -22,3 +22,5 @@ htmlcov/
 .DS_Store
 
 staticfiles
+
+openAI.env
