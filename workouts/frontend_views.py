@@ -1,10 +1,17 @@
 import json
+import logging
+import os
+from functools import lru_cache
+
+import numpy as np
+import requests
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
+from openai import OpenAI
 
 from .exceptions import (
     ExerciseAccessDeniedError,
@@ -26,6 +33,182 @@ from .selectors import (
     get_user_stats
 )
 from .services import create_exercise, create_routine, delete_exercise, delete_routine
+
+
+logger = logging.getLogger(__name__)
+
+
+def _cosine_similarity(a, b):
+    denominator = np.linalg.norm(a) * np.linalg.norm(b)
+    if denominator == 0:
+        return 0.0
+    return float(np.dot(a, b) / denominator)
+
+
+def _expand_semantic_query(query):
+    query = (query or "").strip().lower()
+    if not query:
+        return ""
+
+    synonyms = {
+        "street": ["street workout", "calistenia", "calisthenics", "entrenamiento callejero"],
+        "calle": ["street workout", "calistenia", "calisthenics"],
+        "calistenia": ["street workout", "bodyweight", "calisthenics"],
+        "pierna": ["leg", "legs", "lower body"],
+        "pecho": ["chest", "pectoral"],
+        "espalda": ["back", "dorsal"],
+        "proteina": ["protein", "high protein"],
+        "definicion": ["cut", "lean", "shredded"],
+    }
+
+    expanded_terms = [query]
+    for token in query.split():
+        expanded_terms.extend(synonyms.get(token, []))
+
+    unique_terms = []
+    seen = set()
+    for term in expanded_terms:
+        if term and term not in seen:
+            unique_terms.append(term)
+            seen.add(term)
+
+    return " ".join(unique_terms)
+
+
+@lru_cache(maxsize=1)
+def _get_huggingface_api_token():
+    return os.getenv("HUGGINGFACE_API_TOKEN") or os.getenv("huggingface_apikey")
+
+
+@lru_cache(maxsize=1)
+def _has_embedding_provider_configured():
+    return _get_openai_client() is not None or bool(_get_huggingface_api_token())
+
+
+@lru_cache(maxsize=1)
+def _get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("openai_apikey")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
+
+
+@lru_cache(maxsize=2048)
+def _get_openai_title_embedding_cached(title):
+    client = _get_openai_client()
+    response = client.embeddings.create(
+        input=[title],
+        model="text-embedding-3-small",
+    )
+    return np.array(response.data[0].embedding, dtype=np.float32)
+
+
+def _rank_with_hf_sentence_similarity(items, query, title_attr):
+    token = _get_huggingface_api_token()
+    if not token:
+        return None
+
+    titles = []
+    filtered_items = []
+    for item in items:
+        title = (getattr(item, title_attr, "") or "").strip()
+        if not title:
+            continue
+        titles.append(title)
+        filtered_items.append(item)
+
+    if not titles:
+        return []
+
+    model_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
+    response = requests.post(
+        model_url,
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "inputs": {
+                "source_sentence": query,
+                "sentences": titles,
+            },
+            "options": {"wait_for_model": True},
+        },
+        timeout=45,
+    )
+    response.raise_for_status()
+    scores = response.json()
+
+    if not isinstance(scores, list):
+        raise ValueError("Unexpected Hugging Face sentence-similarity response format")
+
+    scored_items = []
+    for item, score in zip(filtered_items, scores):
+        score = float(score)
+        item.semantic_score = score
+        item.semantic_percent = max(0.0, min(1.0, score)) * 100
+        scored_items.append((score, item))
+
+    scored_items.sort(key=lambda pair: pair[0], reverse=True)
+    return [item for _, item in scored_items]
+
+
+def _get_title_embedding(title):
+    client = _get_openai_client()
+    if client:
+        try:
+            return _get_openai_title_embedding_cached(title), "openai"
+        except Exception as exc:
+            logger.warning("OpenAI embeddings failed: %s", exc)
+
+    return None, "none"
+
+
+def _semantic_rank_by_title(items, query, title_attr):
+    query = (query or "").strip()
+    if not query:
+        return list(items), "none"
+
+    expanded_query = _expand_semantic_query(query)
+    query_embedding, provider = _get_title_embedding(expanded_query)
+    if query_embedding is None:
+        if _get_huggingface_api_token():
+            try:
+                ranked_items = _rank_with_hf_sentence_similarity(items, expanded_query, title_attr)
+                if ranked_items is not None:
+                    return ranked_items, "embedding", "huggingface"
+            except Exception as exc:
+                logger.warning("Hugging Face semantic ranking failed: %s", exc)
+
+        lowered_query_tokens = set(expanded_query.lower().split())
+        if not lowered_query_tokens:
+            lowered_query_tokens = {query.lower()}
+        return (
+            [
+                item for item in items
+                if any(
+                    token in (getattr(item, title_attr, "") or "").lower()
+                    for token in lowered_query_tokens
+                )
+            ],
+            "text",
+            "none",
+        )
+
+    scored_items = []
+    for item in items:
+        title = getattr(item, title_attr, "") or ""
+        if not title:
+            continue
+
+        title_embedding, _ = _get_title_embedding(title)
+        if title_embedding is None:
+            continue
+
+        score = _cosine_similarity(query_embedding, title_embedding)
+        item.semantic_score = score
+        item.semantic_percent = max(0.0, min(1.0, score)) * 100
+        scored_items.append((score, item))
+
+    scored_items.sort(key=lambda pair: pair[0], reverse=True)
+    return [item for _, item in scored_items], "embedding", provider
 
 
 class LoginView(View):
@@ -311,6 +494,7 @@ class SocialFeedView(View):
 
     def get(self, request):
         tab = request.GET.get("tab", "routines")
+        search_query = request.GET.get("q", "").strip()
         selected_routine_id = request.GET.get("routine")
         selected_meal_plan_id = request.GET.get("meal")
         selected_exercise_id = request.GET.get("exercise")
@@ -324,9 +508,21 @@ class SocialFeedView(View):
             meal_plans_qs = meal_plans_qs.exclude(user=request.user)
             exercises_qs = exercises_qs.exclude(user=request.user)
 
-        public_routines = routines_qs[:20]
-        public_meal_plans = meal_plans_qs[:20]
-        public_exercises = exercises_qs[:20]
+        public_routines = list(routines_qs[:20])
+        search_mode = "none"
+        search_provider = "none"
+
+        if tab == "meals" and search_query:
+            ranked_meals, search_mode, search_provider = _semantic_rank_by_title(list(meal_plans_qs[:100]), search_query, "name")
+            public_meal_plans = ranked_meals[:20]
+        else:
+            public_meal_plans = list(meal_plans_qs[:20])
+
+        if tab == "exercises" and search_query:
+            ranked_exercises, search_mode, search_provider = _semantic_rank_by_title(list(exercises_qs[:100]), search_query, "name")
+            public_exercises = ranked_exercises[:20]
+        else:
+            public_exercises = list(exercises_qs[:20])
 
         saved_routine_ids = set()
         saved_meal_plan_ids = set()
@@ -384,6 +580,10 @@ class SocialFeedView(View):
                 "public_exercises": public_exercises,
                 "is_authenticated": request.user.is_authenticated,
                 "active_tab": tab if tab in {"routines", "meals", "exercises"} else "routines",
+                "search_query": search_query,
+                "embedding_search_enabled": _has_embedding_provider_configured(),
+                "search_mode": search_mode,
+                "search_provider": search_provider,
                 "selected_routine": selected_routine,
                 "selected_meal_plan": selected_meal_plan,
                 "selected_exercise": selected_exercise,
