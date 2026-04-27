@@ -5,5 +5,7 @@ gunicorn==23.0.0
 Pillow==11.3.0
 whitenoise
 faker
-openai>=1.0.0
-python-dotenv>=1.0.0
+openai 
+python-dotenv
+numpy 
+requests 

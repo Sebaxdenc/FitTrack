@@ -1,4 +1,9 @@
 import json
+import os
+import base64
+import requests as http_requests
+from dotenv import load_dotenv
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -29,6 +34,68 @@ from .selectors import (
     get_user_stats
 )
 from .services import create_exercise, create_routine, delete_exercise, delete_routine
+
+
+#  Generación de imagen con Gemini Imagen 
+
+def _generate_meal_image_gemini(meal_name: str):
+    load_dotenv("gemini.env")
+    load_dotenv("../gemini.env")
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+
+    prompt = (
+        f"High quality food photography of '{meal_name}', "
+        "served on a clean white plate, professional studio lighting, "
+        "top-down view, appetizing, vibrant colors, no text."
+    )
+
+    #  Modelo gratuito con soporte de generación de imágenes
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash-image:generateContent?key={api_key}"
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+    }
+
+    try:
+        response = http_requests.post(url, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+
+        # La imagen viene en parts como inlineData
+        parts = data["candidates"][0]["content"]["parts"]
+        image_b64 = None
+        for part in parts:
+            if "inlineData" in part:
+                image_b64 = part["inlineData"]["data"]
+                break
+
+        if not image_b64:
+            return None
+
+        image_bytes = base64.b64decode(image_b64)
+
+        save_folder = "media/meals/"
+        os.makedirs(save_folder, exist_ok=True)
+
+        safe_name = meal_name.replace(" ", "_").replace("/", "-")
+        filename = f"m_{safe_name}.png"
+        full_path = os.path.join(save_folder, filename)
+
+        with open(full_path, "wb") as f:
+            f.write(image_bytes)
+
+        return os.path.join("meals", filename)
+
+    except Exception:
+        return None
+
 
 class LoginView(View):
     template_name = "auth/login.html"
@@ -535,6 +602,7 @@ class DietView(LoginRequiredMixin, View):
             "form": form
         })
 
+
 @login_required
 def add_meal(request):
     if request.method == 'POST':
@@ -542,5 +610,12 @@ def add_meal(request):
         if form.is_valid():
             meal = form.save(commit=False)
             meal.user = request.user
+
+            #  Si el usuario no subió imagen ni URL, generamos una con Gemini
+            if not request.FILES.get('image') and not form.cleaned_data.get('image_url'):
+                generated_path = _generate_meal_image_gemini(meal.name)
+                if generated_path:
+                    meal.image = generated_path
+
             meal.save()
     return redirect('diet')
