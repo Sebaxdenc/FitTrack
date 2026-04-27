@@ -218,11 +218,182 @@
 
         </div>
     </div>
+
+    <!-- ── Recomendaciones de IA ── -->
+    <p class="section-label" style="margin-top:32px;">Recomendaciones personalizadas</p>
+    <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-size:14px;font-weight:700;">Sugerencias de mejora basadas en IA</h3>
+            <button 
+                id="aiButton" 
+                type="button" 
+                style="
+                    padding:8px 16px;
+                    background:linear-gradient(135deg, #21e36b 0%, #00c4ff 100%);
+                    color:#0a0e27;
+                    border:none;
+                    border-radius:6px;
+                    font-weight:700;
+                    font-size:12px;
+                    cursor:pointer;
+                    transition:all 0.3s ease;
+                    display:flex;
+                    align-items:center;
+                    gap:6px;
+                "
+                onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';"
+                onmouseout="this.style.opacity='1';this.style.transform='translateY(0)';"
+            >
+                <span>🤖</span>
+                <span id="buttonText">Obtener recomendaciones</span>
+            </button>
+        </div>
+        
+        <div id="recommendationsContainer" style="display:none;margin-top:16px;">
+            <div id="loadingSpinner" style="text-align:center;padding:20px;display:none;">
+                <div style="
+                    border:3px solid rgba(33,227,107,.2);
+                    border-top:3px solid #21e36b;
+                    border-radius:50%;
+                    width:30px;
+                    height:30px;
+                    animation:spin 1s linear infinite;
+                    margin:0 auto;
+                " id="spinner"></div>
+                <p style="margin-top:12px;color:#9aa3b5;">Consultando con la IA...</p>
+            </div>
+            <div id="recommendationsText" style="
+                line-height:1.6;
+                color:#e0e6ed;
+                font-size:13px;
+                padding:12px;
+                background:rgba(33,227,107,.05);
+                border-left:3px solid #21e36b;
+                border-radius:4px;
+                display:none;
+            "></div>
+            <div id="errorMessage" style="
+                display:none;
+                padding:12px;
+                background:rgba(255,100,100,.1);
+                border-left:3px solid #ff6464;
+                border-radius:4px;
+                color:#ff6464;
+                font-size:13px;
+            "></div>
+        </div>
+
+        <p class="muted" style="font-size:12px;margin-top:12px;line-height:1.5;">
+            💡 Las recomendaciones se generan basándose en tus estadísticas de los últimos 7 días. Incluye sugerencias sobre entrenamiento, nutrición y recuperación.
+        </p>
+    </section>
 </main>
+
+<style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
 
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // AI Recommendations functionality
+    const aiButton = document.getElementById('aiButton');
+    const recommendationsContainer = document.getElementById('recommendationsContainer');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const recommendationsText = document.getElementById('recommendationsText');
+    const errorMessage = document.getElementById('errorMessage');
+    const buttonText = document.getElementById('buttonText');
+
+    aiButton.addEventListener('click', async function() {
+        // Disable button and show loading
+        aiButton.disabled = true;
+        aiButton.style.opacity = '0.6';
+        buttonText.textContent = 'Cargando...';
+
+        recommendationsContainer.style.display = 'block';
+        loadingSpinner.style.display = 'block';
+        recommendationsText.style.display = 'none';
+        errorMessage.style.display = 'none';
+
+        try {
+            // Get stats data from the page
+            const statsData = {
+                workouts_last_7: {{ stats.workouts_last_7 }},
+                workouts_last_30: {{ stats.workouts_last_30 }},
+                total_workouts: {{ stats.total_workouts }},
+                avg_duration_minutes: {{ stats.avg_duration_minutes }},
+                total_duration_hours: {{ stats.total_duration_hours }},
+                avg_calories_burned_7d: {{ stats.avg_calories_burned_7d }},
+                avg_calories_consumed_7d: {{ stats.avg_calories_consumed_7d }},
+                current_streak: {{ stats.current_streak }},
+                goal_completion_rate: {{ stats.goal_completion_rate }},
+                total_routines: {{ stats.total_routines }},
+                total_goals: {{ stats.total_goals }},
+                scheduled_days: {{ stats.scheduled_days }}
+            };
+
+            // Call the AI endpoint
+            const response = await fetch('/api/ai/recommendations/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(statsData)
+            });
+
+            const data = await response.json();
+
+            loadingSpinner.style.display = 'none';
+
+            if (data.success) {
+                recommendationsText.innerHTML = data.recommendations
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .map(line => {
+                        if (line.startsWith('•') || line.startsWith('-') || line.match(/^\d+\./)) {
+                            return `<div style="margin-bottom:10px;">${line}</div>`;
+                        }
+                        return line;
+                    })
+                    .join('');
+                recommendationsText.style.display = 'block';
+            } else {
+                errorMessage.textContent = data.error || 'Error al obtener recomendaciones';
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            loadingSpinner.style.display = 'none';
+            errorMessage.textContent = 'Error al conectar con el servidor. Por favor, intenta más tarde.';
+            errorMessage.style.display = 'block';
+        } finally {
+            aiButton.disabled = false;
+            aiButton.style.opacity = '1';
+            buttonText.textContent = 'Obtener recomendaciones';
+        }
+    });
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 {% endblock %}
 
 <!-- ── Charts ── -->
