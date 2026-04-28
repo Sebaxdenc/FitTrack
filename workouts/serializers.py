@@ -61,7 +61,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
             "user",
             "name",
             "muscle_group",
-            "type",
+            "description",
             "image_url",
             "equipment_photo",
             "display_image_url",

@@ -76,7 +76,8 @@
                 {% endif %}
                 <div class="exercise-body">
                   <label class="checkline"><input type="checkbox" name="selected_exercise_{{ exercise.id }}"><span>{{ exercise.name }}</span></label>
-                  <div class="muted">{{ exercise.muscle_group }} | {{ exercise.type }}</div>
+                  <div class="muted">{{ exercise.muscle_group }}</div>
+                  <div class="muted">{{ exercise.description|truncatechars:90 }}</div>
                   <div class="split">
                     <div><label>Orden</label><input type="number" min="1" name="sort_order_{{ exercise.id }}" value="{{ forloop.counter }}"></div>
                     <div><label>Series</label><input type="number" min="1" name="target_sets_{{ exercise.id }}" value="3"></div>

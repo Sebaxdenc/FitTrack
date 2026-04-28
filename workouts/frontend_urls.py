@@ -2,6 +2,7 @@ from django.urls import path
 
 from .frontend_views import (
     ExerciseDeleteView,
+    ExerciseDescriptionGenerateView,
     ExerciseListView,
     HomeView,
     LoginView,
@@ -19,6 +20,8 @@ urlpatterns = [
     path("home/", HomeView.as_view(), name="dashboard-home"),
     path("ejercicios/", ExerciseListView.as_view(), name="exercise-list"),
     path("exercises/", ExerciseListView.as_view(), name="exercise-list-en"),
+    path("ejercicios/generar-descripcion/", ExerciseDescriptionGenerateView.as_view(), name="exercise-description-generate"),
+    path("exercises/generate-description/", ExerciseDescriptionGenerateView.as_view(), name="exercise-description-generate-en"),
     path("ejercicios/<int:exercise_id>/eliminar/", ExerciseDeleteView.as_view(), name="exercise-delete"),
     path("exercises/<int:exercise_id>/delete/", ExerciseDeleteView.as_view(), name="exercise-delete-en"),
     path("rutinas/", RoutineListView.as_view(), name="routine-list"),

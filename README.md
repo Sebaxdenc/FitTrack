@@ -103,14 +103,15 @@ Este proyecto se encuentra en una fase activa de diseño y construcción, siguie
 ### Quickstart local
 1. Crea tu entorno: `python -m venv .venv && .venv\Scripts\activate`
 2. Instala dependencias: `pip install -r requirements.txt`
-3. Copia variables: `cp .env.example .env`
+3. Copia `.env.example` a `.env`
 4. Ejecuta migraciones: `python manage.py migrate`
 5. Arranca servidor: `python manage.py runserver`
 
 ### Con Docker
-1. `cp .env.example .env`
-2. `docker compose up --build`
-3. API disponible en `http://localhost:8000/api/`
+1. Copia `.env.example` a `.env`
+2. Ejecuta `docker compose up --build`
+3. Docker Compose usa Postgres y aplica migraciones antes de levantar Gunicorn
+4. API disponible en `http://localhost:8000/api/`
 
 ### Migraciones
 Si cambias modelos: `python manage.py makemigrations workouts && python manage.py migrate`

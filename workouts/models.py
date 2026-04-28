@@ -108,7 +108,7 @@ class Exercise(models.Model):
     )
     name = models.CharField(max_length=255)
     muscle_group = models.CharField(max_length=255)
-    type = models.CharField(max_length=100)
+    description = models.TextField()
     image_url = models.TextField(
         blank=True,
         validators=[validate_http_image_url],
