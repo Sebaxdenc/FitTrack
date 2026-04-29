@@ -3,6 +3,8 @@ from django.shortcuts import render
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
 
 from .models import (
     Exercise,
@@ -67,11 +69,21 @@ class MealViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def favorite(self, request, pk=None):
         meal = self.get_object()
-        FavoriteMeal.objects.get_or_create(
+
+        favorite = FavoriteMeal.objects.filter(
             user=request.user,
             meal=meal
-        )
-        return Response({"status": "favorited"})
+        ).first()
+
+        if favorite:
+            favorite.delete()
+            return Response({"status": "removed"})
+        else:
+            FavoriteMeal.objects.create(
+                user=request.user,
+                meal=meal
+            )
+            return Response({"status": "favorited"})
 
 
 class RoutineViewSet(viewsets.ModelViewSet):
@@ -145,3 +157,43 @@ class SocialMealPlanViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return MealPlan.objects.filter(is_public=True).prefetch_related("items").order_by("-created_at")
+
+
+# ---------------------------------------------------
+# 🤖 AI RECOMMENDATIONS
+# ---------------------------------------------------
+
+class AIRecommendationsView(APIView):
+    """
+    Endpoint para obtener recomendaciones de IA basadas en las estadísticas del usuario.
+    Requiere autenticación.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        """
+        Recibe las estadísticas del usuario y retorna recomendaciones de IA.
+        """
+        try:
+            from .services import get_ai_recommendations
+            
+            stats_data = request.data
+            
+            # Obtener recomendaciones de IA
+            recommendations = get_ai_recommendations(stats_data)
+            
+            return Response({
+                "success": True,
+                "recommendations": recommendations
+            }, status=status.HTTP_200_OK)
+        
+        except ValueError as e:
+            return Response({
+                "success": False,
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": "Error al obtener recomendaciones de IA. Por favor, intenta más tarde."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
