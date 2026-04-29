@@ -1,0 +1,185 @@
+/* Custom Properties and Overrides */
+:root {
+    --neon-green: #39FF14;
+    --dark-bg: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --border-color: #444;
+    --gold-accent: #c09e3a;
+    --nav-blue: #007bff; /* Bootstrap primary or custom blue for bottom nav */
+}
+
+body {
+    background-color: var(--dark-bg) !important;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #e0e0e0;
+}
+
+.bg-black {
+    background-color: #000 !important;
+}
+
+.text-neon-green {
+    color: var(--neon-green);
+}
+
+.btn-neon-green {
+    background-color: var(--neon-green);
+    color: #000;
+    font-weight: bold;
+    border: none;
+}
+
+.btn-neon-green:hover {
+    background-color: #32e612;
+    color: #000;
+}
+
+/* Date Badge Style */
+.date-badge {
+    background-color: transparent;
+    border-color: var(--gold-accent) !important;
+    color: #ffd700; /* Goldish text */
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Routine/Diet Cards */
+.feed-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.feed-card:active {
+    transform: scale(0.98);
+}
+
+.feed-card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feed-card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 0;
+    display: inline-block;
+}
+
+.feed-card-subtitle {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-left: 8px;
+    font-style: italic;
+}
+
+.feed-card-body {
+    padding: 16px;
+}
+
+.feed-image-container {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--gold-accent);
+    margin-bottom: 12px;
+    position: relative;
+    height: 180px; /* Fixed height for consistency */
+}
+
+.feed-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Multi-image grid for Gym workout */
+.grid-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 90px 90px;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.grid-item {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--gold-accent);
+}
+
+.grid-item.large {
+    grid-row: span 2;
+}
+
+.grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.feed-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #bbb;
+}
+
+.text-success-custom {
+    color: var(--neon-green) !important;
+}
+
+.view-details {
+    color: var(--neon-green);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Bottom Navigation */
+.nav-item {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.nav-item.active-nav, .nav-item:hover {
+    opacity: 1;
+}
+
+/* Small indicator dot */
+.indicator-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--neon-green);
+    border-radius: 50%;
+    display: inline-block;
+    position: absolute;
+    right: 16px;
+    top: 16px;
+}
+
+/* Utility constraints for Mobile first view */
+@media (min-width: 576px) {
+    body {
+        background-color: #000 !important;
+    }
+    main#community-feed {
+        max-width: 500px;
+        margin: 0 auto;
+        background-color: var(--dark-bg);
+        min-height: 100vh;
+        border-left: 1px solid #333;
+        border-right: 1px solid #333;
+    }
+    header, nav {
+        max-width: 500px;
+        margin: 0 auto;
+        left: 0;
+        right: 0;
+    }
+}

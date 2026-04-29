@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack - Tu Compañero de Fitness</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .hero-section {
+            padding: 100px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        .neon-green {
+            color: #39ff14;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-dark bg-opacity-75 fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <span class="neon-green">FIT</span><span class="text-white">track</span>
+            </a>
+            <div>
+                <a href="/api/" class="btn btn-outline-light me-2">API</a>
+                <a href="/admin/" class="btn btn-outline-light">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section text-white text-center">
+        <div class="container">
+            <h1 class="display-1 fw-bold mb-4">
+                <span class="neon-green">FIT</span><span>track</span>
+            </h1>
+            <p class="lead fs-3 mb-5">Tu compañero completo para fitness, nutrición y bienestar</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="/feed/" class="btn btn-light btn-lg px-5">
+                    <i class="bi bi-globe-americas me-2"></i>Explorar Feed Social
+                </a>
+                <a href="/api/" class="btn btn-outline-light btn-lg px-5">
+                    <i class="bi bi-code-slash me-2"></i>Documentación API
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container pb-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card bg-dark bg-opacity-75 text-white h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-bicycle display-1 neon-green mb-3"></i>
+                        <h3 class="card-title">Rutinas</h3>
+                        <p class="card-text">Crea y comparte rutinas de ejercicio personalizadas con la comunidad</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card bg-dark bg-opacity-75 text-white h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-egg-fried display-1 neon-green mb-3"></i>
+                        <h3 class="card-title">Nutrición</h3>
+                        <p class="card-text">Registra tus comidas y alcanza tus objetivos calóricos diarios</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card bg-dark bg-opacity-75 text-white h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-people-fill display-1 neon-green mb-3"></i>
+                        <h3 class="card-title">Comunidad</h3>
+                        <p class="card-text">Conecta con otros usuarios y comparte tu progreso fitness</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Endpoints Section -->
+    <div class="container pb-5">
+        <div class="card bg-dark bg-opacity-75 text-white border-0 shadow">
+            <div class="card-body p-4">
+                <h2 class="text-center mb-4">API REST Endpoints</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle neon-green me-2"></i>
+                                <code>/api/exercises/</code> - Ejercicios
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle neon-green me-2"></i>
+                                <code>/api/routines/</code> - Rutinas
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle neon-green me-2"></i>
+                                <code>/api/meals/</code> - Comidas
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle neon-green me-2"></i>
+                                <code>/api/favorites/exercises/</code> - Favoritos
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle neon-green me-2"></i>
+                                <code>/api/favorites/meals/</code> - Favoritos
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/api/" class="btn btn-outline-light">Ver API Completa</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
