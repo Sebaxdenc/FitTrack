@@ -1,5 +1,7 @@
 .env
 *.env
+.env.*
+!.env.example
 __pycache__/
 *.py[cod]
 *$py.class
@@ -22,3 +24,5 @@ htmlcov/
 .DS_Store
 
 staticfiles
+
+openAI.env

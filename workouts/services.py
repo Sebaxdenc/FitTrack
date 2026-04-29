@@ -16,12 +16,12 @@ from .models import Exercise, Routine, RoutineExercise, RoutineSchedule
 
 logger = logging.getLogger(__name__)
 
-def create_exercise(*, user, name, muscle_group, exercise_type, image_url="", equipment_photo=None):
+def create_exercise(*, user, name, muscle_group, description, image_url="", equipment_photo=None):
     return Exercise.objects.create(
         user=user,
         name=name.strip(),
         muscle_group=muscle_group.strip(),
-        type=exercise_type.strip(),
+        description=description.strip(),
         image_url=image_url.strip(),
         equipment_photo=equipment_photo,
     )
