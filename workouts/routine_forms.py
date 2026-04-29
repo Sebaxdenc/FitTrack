@@ -6,7 +6,11 @@ from .models import RoutineSchedule
 class ExerciseCreateForm(forms.Form):
     name = forms.CharField(label="Nombre del ejercicio", max_length=255)
     muscle_group = forms.CharField(label="Grupo muscular", max_length=255)
-    type = forms.CharField(label="Tipo", max_length=100)
+    description = forms.CharField(
+        label="Descripcion",
+        widget=forms.Textarea(attrs={"rows": 4}),
+        max_length=1000,
+    )
     image_url = forms.CharField(label="Foto URL opcional", required=False)
     equipment_photo = forms.ImageField(label="Foto del equipo", required=False)
 

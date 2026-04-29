@@ -12,6 +12,8 @@ from .models import (
     FavoriteMeal,
     Meal,
     MealLog,
+    MealPlan,
+    MealItem,
     MealRating,
     Profile,
     Routine,
@@ -61,7 +63,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
             "user",
             "name",
             "muscle_group",
-            "type",
+            "description",
             "image_url",
             "equipment_photo",
             "display_image_url",
@@ -161,19 +163,27 @@ class RoutineExerciseSerializer(serializers.ModelSerializer):
 class RoutineSerializer(serializers.ModelSerializer):
     exercises = RoutineExerciseSerializer(many=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    author = serializers.CharField(source='user.username', read_only=True)
+    estimated_calories = serializers.SerializerMethodField()
 
     class Meta:
         model = Routine
         fields = [
             "id",
             "user",
+            "author",
             "name",
             "goal",
+            "description",
             "is_public",
             "created_at",
             "exercises",
+            "estimated_calories",
         ]
-        read_only_fields = ["id", "user", "created_at"]
+        read_only_fields = ["id", "user", "created_at", "estimated_calories"]
+
+    def get_estimated_calories(self, obj):
+        return obj.estimated_calories()
 
     def validate_exercises(self, value):
         orders = [item["sort_order"] for item in value]
@@ -329,3 +339,51 @@ class EquipmentRecommendationSerializer(serializers.ModelSerializer):
         model = EquipmentRecommendation
         fields = ["id", "name", "category", "description", "link"]
         read_only_fields = ["id"]
+
+
+# ---------------------------------------------------
+# 🍽️ MEAL PLANS
+# ---------------------------------------------------
+
+class MealItemSerializer(serializers.ModelSerializer):
+    meal_name = serializers.CharField(source='meal.name', read_only=True)
+    meal_calories = serializers.IntegerField(source='meal.calories', read_only=True)
+
+    class Meta:
+        model = MealItem
+        fields = [
+            "id",
+            "meal",
+            "meal_name",
+            "meal_calories",
+            "quantity",
+            "meal_type",
+            "sort_order",
+        ]
+        read_only_fields = ["id"]
+
+
+class MealPlanSerializer(serializers.ModelSerializer):
+    items = MealItemSerializer(many=True, read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    author = serializers.CharField(source='user.username', read_only=True)
+    total_calories = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MealPlan
+        fields = [
+            "id",
+            "user",
+            "author",
+            "name",
+            "description",
+            "is_public",
+            "created_at",
+            "updated_at",
+            "items",
+            "total_calories",
+        ]
+        read_only_fields = ["id", "user", "created_at", "updated_at", "total_calories"]
+
+    def get_total_calories(self, obj):
+        return obj.total_calories()

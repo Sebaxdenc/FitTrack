@@ -90,11 +90,46 @@
     }
     .exercise-info strong { display:block; margin-bottom:4px; }
     .exercise-info span { color:var(--muted); font-size:13px; }
-    .exercise-type {
-      color:var(--accent);
+    .exercise-description {
+      color:var(--muted);
       font-size:13px;
-      font-weight:800;
-      white-space:nowrap;
+      text-align:right;
+      max-width:220px;
+    }
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0b0f15;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px 12px;
+      z-index: 50;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .nav-item {
+      color: #9aa3b5;
+      text-decoration: none;
+      font-size: 12px;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+    .nav-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
     }
     @media (max-width:880px) { .layout { grid-template-columns:1fr; } }
   </style>
@@ -185,7 +220,7 @@
                   <strong>{{ exercise.name }}</strong>
                   <span>{{ exercise.muscle_group }}</span>
                 </div>
-                <div class="exercise-type">{{ exercise.type }}</div>
+                <div class="exercise-description">{{ exercise.description|truncatechars:80 }}</div>
               </section>
             {% endfor %}
             <div class="link-row" style="margin-top:4px;">
@@ -218,5 +253,6 @@
       </article>
     </section>
   </main>
+  {% include "dashboard/partials/bottom_nav.html" %}
 </body>
 </html>

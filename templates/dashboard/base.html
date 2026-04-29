@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FITtrack | {% block title %}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+
+
+</head>
+
+<body>
+    <div class="app-shell">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% include "dashboard/partials/bottom_nav.html" %}
+
+
+    {% block extra_js %}{% endblock %}
+    <script>
+        (function () {
+            const chipTime = document.getElementById('chip-time');
+            function renderClock() {
+                const now = new Date();
+                const opts = { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+                chipTime.textContent = now.toLocaleString('es-ES', opts).toUpperCase();
+            }
+            renderClock();
+            setInterval(renderClock, 15000);
+        })();
+    </script>
+</body>
+
+</html>

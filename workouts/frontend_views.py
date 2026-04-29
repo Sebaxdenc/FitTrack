@@ -1,18 +1,37 @@
+import json
+
+from django.http import JsonResponse
+import os
+import base64
+import requests as http_requests
+from dotenv import load_dotenv
+import logging
+from functools import lru_cache
+import numpy as np
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
+from .models import Meal, FavoriteMeal 
+from .forms import MealForm
+from openai import OpenAI
 
+from .ai_services import generate_exercise_description
 from .exceptions import (
     ExerciseAccessDeniedError,
+    ExerciseDescriptionConfigurationError,
+    ExerciseDescriptionGenerationError,
     ExerciseError,
     RoutineAccessDeniedError,
     RoutineError,
     RoutineNotFoundError,
+    
 )
 from .forms import LoginForm, RegistrationForm
-from .models import RoutineSchedule
+from .models import Exercise, FavoriteExercise, MealItem, MealPlan, Routine, RoutineExercise, RoutineSchedule
 from .routine_forms import ExerciseCreateForm, RoutineCreateForm
 from .selectors import (
     get_todays_routine_schedule,
@@ -20,8 +39,245 @@ from .selectors import (
     get_user_routine,
     get_user_routines,
     get_user_weekly_schedule,
+    get_user_stats
 )
 from .services import create_exercise, create_routine, delete_exercise, delete_routine
+
+
+#  Generación de imagen con Gemini Imagen 
+
+def _generate_meal_image_gemini(meal_name: str):
+    load_dotenv("gemini.env")
+    load_dotenv("../gemini.env")
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+
+    prompt = (
+        f"High quality food photography of '{meal_name}', "
+        "served on a clean white plate, professional studio lighting, "
+        "top-down view, appetizing, vibrant colors, no text."
+    )
+
+    #  Modelo gratuito con soporte de generación de imágenes
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash-image:generateContent?key={api_key}"
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+    }
+
+    try:
+        response = http_requests.post(url, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+
+        # La imagen viene en parts como inlineData
+        parts = data["candidates"][0]["content"]["parts"]
+        image_b64 = None
+        for part in parts:
+            if "inlineData" in part:
+                image_b64 = part["inlineData"]["data"]
+                break
+
+        if not image_b64:
+            return None
+
+        image_bytes = base64.b64decode(image_b64)
+
+        save_folder = "media/meals/"
+        os.makedirs(save_folder, exist_ok=True)
+
+        safe_name = meal_name.replace(" ", "_").replace("/", "-")
+        filename = f"m_{safe_name}.png"
+        full_path = os.path.join(save_folder, filename)
+
+        with open(full_path, "wb") as f:
+            f.write(image_bytes)
+
+        return os.path.join("meals", filename)
+
+    except Exception:
+        return None
+
+logger = logging.getLogger(__name__)
+
+
+def _cosine_similarity(a, b):
+    denominator = np.linalg.norm(a) * np.linalg.norm(b)
+    if denominator == 0:
+        return 0.0
+    return float(np.dot(a, b) / denominator)
+
+
+def _expand_semantic_query(query):
+    query = (query or "").strip().lower()
+    if not query:
+        return ""
+
+    synonyms = {
+        "street": ["street workout", "calistenia", "calisthenics", "entrenamiento callejero"],
+        "calle": ["street workout", "calistenia", "calisthenics"],
+        "calistenia": ["street workout", "bodyweight", "calisthenics"],
+        "pierna": ["leg", "legs", "lower body"],
+        "pecho": ["chest", "pectoral"],
+        "espalda": ["back", "dorsal"],
+        "proteina": ["protein", "high protein"],
+        "definicion": ["cut", "lean", "shredded"],
+    }
+
+    expanded_terms = [query]
+    for token in query.split():
+        expanded_terms.extend(synonyms.get(token, []))
+
+    unique_terms = []
+    seen = set()
+    for term in expanded_terms:
+        if term and term not in seen:
+            unique_terms.append(term)
+            seen.add(term)
+
+    return " ".join(unique_terms)
+
+
+@lru_cache(maxsize=1)
+def _get_huggingface_api_token():
+    return os.getenv("HUGGINGFACE_API_TOKEN") or os.getenv("huggingface_apikey")
+
+
+@lru_cache(maxsize=1)
+def _has_embedding_provider_configured():
+    return _get_openai_client() is not None or bool(_get_huggingface_api_token())
+
+
+@lru_cache(maxsize=1)
+def _get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("openai_apikey")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
+
+
+@lru_cache(maxsize=2048)
+def _get_openai_title_embedding_cached(title):
+    client = _get_openai_client()
+    response = client.embeddings.create(
+        input=[title],
+        model="text-embedding-3-small",
+    )
+    return np.array(response.data[0].embedding, dtype=np.float32)
+
+
+def _rank_with_hf_sentence_similarity(items, query, title_attr):
+    token = _get_huggingface_api_token()
+    if not token:
+        return None
+
+    titles = []
+    filtered_items = []
+    for item in items:
+        title = (getattr(item, title_attr, "") or "").strip()
+        if not title:
+            continue
+        titles.append(title)
+        filtered_items.append(item)
+
+    if not titles:
+        return []
+
+    model_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
+    response = http_requests.post(
+        model_url,
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "inputs": {
+                "source_sentence": query,
+                "sentences": titles,
+            },
+            "options": {"wait_for_model": True},
+        },
+        timeout=45,
+    )
+    response.raise_for_status()
+    scores = response.json()
+
+    if not isinstance(scores, list):
+        raise ValueError("Unexpected Hugging Face sentence-similarity response format")
+
+    scored_items = []
+    for item, score in zip(filtered_items, scores):
+        score = float(score)
+        item.semantic_score = score
+        item.semantic_percent = max(0.0, min(1.0, score)) * 100
+        scored_items.append((score, item))
+
+    scored_items.sort(key=lambda pair: pair[0], reverse=True)
+    return [item for _, item in scored_items]
+
+
+def _get_title_embedding(title):
+    client = _get_openai_client()
+    if client:
+        try:
+            return _get_openai_title_embedding_cached(title), "openai"
+        except Exception as exc:
+            logger.warning("OpenAI embeddings failed: %s", exc)
+
+    return None, "none"
+
+
+def _semantic_rank_by_title(items, query, title_attr):
+    query = (query or "").strip()
+    if not query:
+        return list(items), "none"
+
+    expanded_query = _expand_semantic_query(query)
+    query_embedding, provider = _get_title_embedding(expanded_query)
+    if query_embedding is None:
+        if _get_huggingface_api_token():
+            try:
+                ranked_items = _rank_with_hf_sentence_similarity(items, expanded_query, title_attr)
+                if ranked_items is not None:
+                    return ranked_items, "embedding", "huggingface"
+            except Exception as exc:
+                logger.warning("Hugging Face semantic ranking failed: %s", exc)
+
+        lowered_query_tokens = set(expanded_query.lower().split())
+        if not lowered_query_tokens:
+            lowered_query_tokens = {query.lower()}
+        return (
+            [
+                item for item in items
+                if any(
+                    token in (getattr(item, title_attr, "") or "").lower()
+                    for token in lowered_query_tokens
+                )
+            ],
+            "text",
+            "none",
+        )
+
+    scored_items = []
+    for item in items:
+        title = getattr(item, title_attr, "") or ""
+        if not title:
+            continue
+
+        title_embedding, _ = _get_title_embedding(title)
+        if title_embedding is None:
+            continue
+
+        score = _cosine_similarity(query_embedding, title_embedding)
+        item.semantic_score = score
+        item.semantic_percent = max(0.0, min(1.0, score)) * 100
+        scored_items.append((score, item))
+
+    scored_items.sort(key=lambda pair: pair[0], reverse=True)
+    return [item for _, item in scored_items], "embedding", provider
 
 
 class LoginView(View):
@@ -128,7 +384,7 @@ class ExerciseListView(LoginRequiredMixin, View):
                     user=request.user,
                     name=form.cleaned_data["name"],
                     muscle_group=form.cleaned_data["muscle_group"],
-                    exercise_type=form.cleaned_data["type"],
+                    description=form.cleaned_data["description"],
                     image_url=form.cleaned_data["image_url"],
                     equipment_photo=form.cleaned_data["equipment_photo"],
                 )
@@ -157,6 +413,39 @@ class ExerciseDeleteView(LoginRequiredMixin, View):
         except (ExerciseError, ExerciseAccessDeniedError) as exc:
             messages.error(request, str(exc))
         return redirect("routine-exercise-list")
+
+
+class ExerciseDescriptionGenerateView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request):
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({"error": "La solicitud no tiene un formato valido."}, status=400)
+
+        name = (payload.get("name") or "").strip()
+        muscle_group = (payload.get("muscle_group") or "").strip()
+        current_description = (payload.get("description") or "").strip()
+
+        if not name or not muscle_group:
+            return JsonResponse(
+                {"error": "Debes completar nombre y grupo muscular antes de usar la IA."},
+                status=400,
+            )
+
+        try:
+            description = generate_exercise_description(
+                name=name,
+                muscle_group=muscle_group,
+                current_description=current_description,
+            )
+        except ExerciseDescriptionConfigurationError as exc:
+            return JsonResponse({"error": str(exc)}, status=503)
+        except ExerciseDescriptionGenerationError as exc:
+            return JsonResponse({"error": str(exc)}, status=502)
+
+        return JsonResponse({"description": description})
 
 
 class RoutineListView(LoginRequiredMixin, View):
@@ -248,6 +537,31 @@ class RoutineDeleteView(LoginRequiredMixin, View):
             messages.error(request, str(exc))
         return redirect("routine-list")
 
+class StatsView(LoginRequiredMixin, View):
+    template_name = "dashboard/stats.html"
+ 
+    def get(self, request):
+        stats = get_user_stats(request.user)
+ 
+        # Serialize chart data to JSON for use in JavaScript
+        weekly_workout_json = json.dumps(stats["weekly_workout_data"])
+        weekly_calorie_json = json.dumps(stats["weekly_calorie_data"])
+        goals_by_week_json = json.dumps(stats["goals_by_week"])
+ 
+        return render(
+            request,
+            self.template_name,
+            {
+                "user": request.user,
+                "stats": stats,
+                # Pre-serialized for Chart.js
+                "weekly_workout_json": weekly_workout_json,
+                "weekly_calorie_json": weekly_calorie_json,
+                "goals_by_week_json": goals_by_week_json,
+                "day_labels": dict(RoutineSchedule.DAY_CHOICES),
+            },
+        )
+    
 
 def _extract_routine_exercises(request):
     exercise_items = []
@@ -271,3 +585,270 @@ def _extract_routine_exercises(request):
         )
 
     return exercise_items
+
+class SocialFeedView(View):
+    """
+    Muestra el feed social con rutinas y planes de comidas públicos.
+    No requiere autenticación pero lo recomendado es autenticarse para ver detalles.
+    """
+    template_name = "social_feed.html"
+
+    def get(self, request):
+        tab = request.GET.get("tab", "routines")
+        search_query = request.GET.get("q", "").strip()
+        selected_routine_id = request.GET.get("routine")
+        selected_meal_plan_id = request.GET.get("meal")
+        selected_exercise_id = request.GET.get("exercise")
+
+        routines_qs = Routine.objects.filter(is_public=True).select_related("user").prefetch_related("exercises__exercise").order_by("-created_at")
+        meal_plans_qs = MealPlan.objects.filter(is_public=True).select_related("user").prefetch_related("items__meal").order_by("-created_at")
+        exercises_qs = Exercise.objects.exclude(user__isnull=True).select_related("user").order_by("-id")
+
+        if request.user.is_authenticated:
+            routines_qs = routines_qs.exclude(user=request.user)
+            meal_plans_qs = meal_plans_qs.exclude(user=request.user)
+            exercises_qs = exercises_qs.exclude(user=request.user)
+
+        public_routines = list(routines_qs[:20])
+        search_mode = "none"
+        search_provider = "none"
+
+        if tab == "meals" and search_query:
+            ranked_meals, search_mode, search_provider = _semantic_rank_by_title(list(meal_plans_qs[:100]), search_query, "name")
+            public_meal_plans = ranked_meals[:20]
+        else:
+            public_meal_plans = list(meal_plans_qs[:20])
+
+        if tab == "exercises" and search_query:
+            ranked_exercises, search_mode, search_provider = _semantic_rank_by_title(list(exercises_qs[:100]), search_query, "name")
+            public_exercises = ranked_exercises[:20]
+        else:
+            public_exercises = list(exercises_qs[:20])
+
+        saved_routine_ids = set()
+        saved_meal_plan_ids = set()
+        saved_exercise_ids = set()
+        if request.user.is_authenticated:
+            saved_routine_ids = set(
+                Routine.objects.filter(user=request.user, source_routine__isnull=False)
+                .values_list("source_routine_id", flat=True)
+            )
+            saved_meal_plan_ids = set(
+                MealPlan.objects.filter(user=request.user, source_meal_plan__isnull=False)
+                .values_list("source_meal_plan_id", flat=True)
+            )
+            saved_exercise_ids = set(
+                FavoriteExercise.objects.filter(user=request.user)
+                .values_list("exercise_id", flat=True)
+            )
+
+        selected_routine = None
+        routine_already_saved = False
+        if selected_routine_id:
+            selected_routine = routines_qs.filter(id=selected_routine_id).first()
+            if selected_routine and request.user.is_authenticated:
+                routine_already_saved = Routine.objects.filter(
+                    user=request.user,
+                    source_routine=selected_routine,
+                ).exists()
+
+        selected_meal_plan = None
+        meal_plan_already_saved = False
+        if selected_meal_plan_id:
+            selected_meal_plan = meal_plans_qs.filter(id=selected_meal_plan_id).first()
+            if selected_meal_plan and request.user.is_authenticated:
+                meal_plan_already_saved = MealPlan.objects.filter(
+                    user=request.user,
+                    source_meal_plan=selected_meal_plan,
+                ).exists()
+
+        selected_exercise = None
+        exercise_already_saved = False
+        if selected_exercise_id:
+            selected_exercise = exercises_qs.filter(id=selected_exercise_id).first()
+            if selected_exercise and request.user.is_authenticated:
+                exercise_already_saved = FavoriteExercise.objects.filter(
+                    user=request.user,
+                    exercise=selected_exercise,
+                ).exists()
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "public_routines": public_routines,
+                "public_meal_plans": public_meal_plans,
+                "public_exercises": public_exercises,
+                "is_authenticated": request.user.is_authenticated,
+                "active_tab": tab if tab in {"routines", "meals", "exercises"} else "routines",
+                "search_query": search_query,
+                "embedding_search_enabled": _has_embedding_provider_configured(),
+                "search_mode": search_mode,
+                "search_provider": search_provider,
+                "selected_routine": selected_routine,
+                "selected_meal_plan": selected_meal_plan,
+                "selected_exercise": selected_exercise,
+                "routine_already_saved": routine_already_saved,
+                "meal_plan_already_saved": meal_plan_already_saved,
+                "exercise_already_saved": exercise_already_saved,
+                "saved_routine_ids": saved_routine_ids,
+                "saved_meal_plan_ids": saved_meal_plan_ids,
+                "saved_exercise_ids": saved_exercise_ids,
+            },
+        )
+
+    def post(self, request):
+        routine_id = request.POST.get("routine_id")
+        meal_plan_id = request.POST.get("meal_plan_id")
+        exercise_id = request.POST.get("exercise_id")
+
+        if meal_plan_id:
+            if not request.user.is_authenticated:
+                messages.error(request, "Debes iniciar sesion para guardar un plan de comida.")
+                return redirect(f"/login/?next=/social/?tab=meals&meal={meal_plan_id}")
+
+            source_plan = MealPlan.objects.filter(id=meal_plan_id, is_public=True).prefetch_related("items").first()
+            if not source_plan:
+                messages.error(request, "El plan de comida no existe o ya no esta disponible.")
+                return redirect("/social/?tab=meals")
+
+            if source_plan.user_id == request.user.id:
+                messages.info(request, "Este plan de comida ya es tuyo.")
+                return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+            if MealPlan.objects.filter(user=request.user, source_meal_plan=source_plan).exists():
+                messages.info(request, "Ya guardaste este plan de comida.")
+                return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+            with transaction.atomic():
+                cloned_plan = MealPlan.objects.create(
+                    user=request.user,
+                    source_meal_plan=source_plan,
+                    name=f"{source_plan.name} (Guardado)",
+                    description=source_plan.description,
+                    is_public=False,
+                )
+
+                meal_items = [
+                    MealItem(
+                        meal_plan=cloned_plan,
+                        meal=item.meal,
+                        quantity=item.quantity,
+                        meal_type=item.meal_type,
+                        sort_order=item.sort_order,
+                    )
+                    for item in source_plan.items.all()
+                ]
+                MealItem.objects.bulk_create(meal_items)
+
+            messages.success(request, "Plan de comida guardado correctamente.")
+            return redirect(f"/social/?tab=meals&meal={source_plan.id}")
+
+        if exercise_id:
+            if not request.user.is_authenticated:
+                messages.error(request, "Debes iniciar sesion para guardar un ejercicio.")
+                return redirect(f"/login/?next=/social/?tab=exercises&exercise={exercise_id}")
+
+            source_exercise = Exercise.objects.filter(id=exercise_id).first()
+            if not source_exercise:
+                messages.error(request, "El ejercicio no existe o ya no esta disponible.")
+                return redirect("/social/?tab=exercises")
+
+            if source_exercise.user_id == request.user.id:
+                messages.info(request, "Este ejercicio ya es tuyo.")
+                return redirect(f"/social/?tab=exercises&exercise={source_exercise.id}")
+
+            favorite, created = FavoriteExercise.objects.get_or_create(
+                user=request.user,
+                exercise=source_exercise,
+            )
+            if created:
+                messages.success(request, "Ejercicio guardado en favoritos.")
+            else:
+                messages.info(request, "Este ejercicio ya esta guardado en favoritos.")
+            return redirect(f"/social/?tab=exercises&exercise={source_exercise.id}")
+
+        if not request.user.is_authenticated:
+            messages.error(request, "Debes iniciar sesion para guardar una rutina.")
+            return redirect(f"/login/?next=/social/?tab=routines&routine={routine_id}")
+
+        source = Routine.objects.filter(id=routine_id, is_public=True).prefetch_related("exercises").first()
+        if not source:
+            messages.error(request, "La rutina no existe o ya no esta disponible.")
+            return redirect("social-feed")
+
+        if source.user_id == request.user.id:
+            messages.info(request, "Esta rutina ya es tuya.")
+            return redirect(f"/social/?tab=routines&routine={source.id}")
+
+        if Routine.objects.filter(user=request.user, source_routine=source).exists():
+            messages.info(request, "Ya guardaste esta rutina en tu lista.")
+            return redirect(f"/social/?tab=routines&routine={source.id}")
+
+        with transaction.atomic():
+            cloned = Routine.objects.create(
+                user=request.user,
+                name=f"{source.name} (Guardada)",
+                source_routine=source,
+                goal=source.goal,
+                description=source.description,
+                is_public=False,
+            )
+
+            routine_exercises = [
+                RoutineExercise(
+                    routine=cloned,
+                    exercise=item.exercise,
+                    sort_order=item.sort_order,
+                    target_sets=item.target_sets,
+                    target_reps=item.target_reps,
+                    rest_seconds=item.rest_seconds,
+                )
+                for item in source.exercises.all()
+            ]
+            RoutineExercise.objects.bulk_create(routine_exercises)
+
+        messages.success(request, "Rutina guardada en tu lista de rutinas.")
+        return redirect(f"/social/?tab=routines&routine={source.id}")
+
+
+class DietView(LoginRequiredMixin, View):
+    template_name = "diet.html"
+
+    def get(self, request):
+        breakfast = Meal.objects.filter(category__name="Desayuno")
+        lunch = Meal.objects.filter(category__name="Almuerzo")
+        dinner = Meal.objects.filter(category__name="Cena")
+
+        favorite_relations = FavoriteMeal.objects.filter(user=request.user)
+        favorite_meals = [fav.meal for fav in favorite_relations]
+        favorite_ids = {meal.id for meal in favorite_meals}
+
+        form = MealForm()
+
+        return render(request, self.template_name, {
+            "breakfast": breakfast,
+            "lunch": lunch,
+            "dinner": dinner,
+            "favorite_meals": favorite_meals,
+            "favorite_ids": favorite_ids,
+            "form": form
+        })
+
+
+@login_required
+def add_meal(request):
+    if request.method == 'POST':
+        form = MealForm(request.POST, request.FILES)
+        if form.is_valid():
+            meal = form.save(commit=False)
+            meal.user = request.user
+
+            #  Si el usuario no subió imagen ni URL, generamos una con Gemini
+            if not request.FILES.get('image') and not form.cleaned_data.get('image_url'):
+                generated_path = _generate_meal_image_gemini(meal.name)
+                if generated_path:
+                    meal.image = generated_path
+
+            meal.save()
+    return redirect('diet')

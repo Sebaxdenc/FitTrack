@@ -10,6 +10,7 @@ from .models import (
     FavoriteExercise,
     FavoriteMeal,
     Meal,
+    MealCategory,
     MealLog,
     MealRating,
     Profile,
@@ -75,3 +76,4 @@ admin.site.register(DailyGoal)
 admin.site.register(WorkoutSet)
 admin.site.register(EquipmentRecommendation)
 admin.site.register(RoutineSchedule)
+admin.site.register(MealCategory)

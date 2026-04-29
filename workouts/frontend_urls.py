@@ -2,6 +2,7 @@ from django.urls import path
 
 from .frontend_views import (
     ExerciseDeleteView,
+    ExerciseDescriptionGenerateView,
     ExerciseListView,
     HomeView,
     LoginView,
@@ -10,6 +11,11 @@ from .frontend_views import (
     RoutineDeleteView,
     RoutineDetailView,
     RoutineListView,
+    StatsView,
+    DietView,
+    SocialFeedView,
+    StatsView,
+    add_meal
 )
 
 urlpatterns = [
@@ -19,6 +25,8 @@ urlpatterns = [
     path("home/", HomeView.as_view(), name="dashboard-home"),
     path("ejercicios/", ExerciseListView.as_view(), name="exercise-list"),
     path("exercises/", ExerciseListView.as_view(), name="exercise-list-en"),
+    path("ejercicios/generar-descripcion/", ExerciseDescriptionGenerateView.as_view(), name="exercise-description-generate"),
+    path("exercises/generate-description/", ExerciseDescriptionGenerateView.as_view(), name="exercise-description-generate-en"),
     path("ejercicios/<int:exercise_id>/eliminar/", ExerciseDeleteView.as_view(), name="exercise-delete"),
     path("exercises/<int:exercise_id>/delete/", ExerciseDeleteView.as_view(), name="exercise-delete-en"),
     path("rutinas/", RoutineListView.as_view(), name="routine-list"),
@@ -33,4 +41,10 @@ urlpatterns = [
     path("routines/<int:routine_id>/", RoutineDetailView.as_view(), name="routine-detail-en"),
     path("rutinas/<int:routine_id>/eliminar/", RoutineDeleteView.as_view(), name="routine-delete"),
     path("routines/<int:routine_id>/delete/", RoutineDeleteView.as_view(), name="routine-delete-en"),
+    path("profile/", StatsView.as_view(), name="profile-view"),
+    path("profile/", StatsView.as_view(), name="profile-view-en"),
+    path('diet/', DietView.as_view(), name='diet'),
+    path("social/", SocialFeedView.as_view(), name="social-feed"),
+    path("sociales/", SocialFeedView.as_view(), name="social-feed-es"),
+    path('add-meal/', add_meal, name='add_meal'),
 ]

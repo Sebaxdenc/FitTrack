@@ -1,274 +1,84 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FITtrack | Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0c1016;
-      --muted: #9aa3b5;
-      --accent: #21e36b;
-      --card: rgba(255,255,255,0.04);
-      --shadow: 0 18px 40px rgba(0,0,0,0.35);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: 'Manrope', system-ui, sans-serif;
-      background: radial-gradient(120% 120% at 20% 20%, rgba(0, 196, 255, 0.12), transparent 45%),
-                  radial-gradient(120% 120% at 80% 0%, rgba(33, 227, 107, 0.12), transparent 40%),
-                  var(--bg);
-      color: #f5f7fb;
-      display: flex;
-      justify-content: center;
-      padding: 32px 16px 110px;
-    }
-    .app-shell { width: min(440px, 100%); }
-    .hero, .section-card, .message {
-      border: 1px solid rgba(255,255,255,0.06);
-      box-shadow: var(--shadow);
-      border-radius: 20px;
-      background: rgba(255,255,255,0.04);
-    }
-    .hero {
-      padding: 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-    }
-    .logo span { color: var(--accent); }
-    .chip-time {
-      margin-left: auto;
-      background: #f5f7fb;
-      color: #0c1016;
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-weight: 800;
-      font-size: 13px;
-    }
-    .messages { margin-top: 14px; display: grid; gap: 8px; }
-    .message { padding: 10px 12px; font-size: 14px; }
-    .section-card { margin-top: 14px; overflow: hidden; }
-    .section-header {
-      padding: 14px 18px 10px;
-      background: linear-gradient(120deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
-    }
-    .section-body { padding: 0 18px 18px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .hero-image {
-      margin-top: 8px;
-      min-height: 180px;
-      border-radius: 14px;
-      background: #0f141c;
-      border: 1px solid rgba(255,255,255,0.08);
-      display: grid;
-      place-items: end start;
-      padding: 18px;
-    }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .tile, .empty-state {
-      background: #0f141c;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 12px;
-    }
-    .tile { font-size: 13px; display: grid; gap: 4px; }
-    .tile span, .tagline, .cta-row { color: var(--muted); font-size: 13px; }
-    .empty-state { color: var(--muted); text-align: center; margin-top: 12px; }
-    .cta-row {
-      margin-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .quick-links {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .quick-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: #0f141c;
-      color: #f5f7fb;
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .quick-link.primary {
-      background: linear-gradient(120deg, #21e36b, #00c4ff);
-      color: #0c1016;
-      border: none;
-    }
-    .cta-row a {
-      color: var(--accent);
-      font-weight: 800;
-      text-decoration: none;
-    }
-    .bottom-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #0b0f15;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding: 10px 14px 12px;
-    }
-    .nav-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
-    .nav-item {
-      color: #9aa3b5;
-      text-decoration: none;
-      font-size: 12px;
-      display: grid;
-      gap: 4px;
-      justify-items: center;
-    }
-    .nav-item.active { color: var(--accent); font-weight: 700; }
-    .nav-item svg {
-      width: 22px;
-      height: 22px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-    }
-  </style>
-</head>
-<body>
-  <div class="app-shell">
-    <header class="hero">
-      <div class="logo"><span>FIT</span>track</div>
-      <div class="chip-time" id="chip-time">--</div>
-    </header>
+{% extends "dashboard/base.html" %}
 
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}
-          <div class="message {{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
+{% block title %}Home{% endblock %}
 
-    <section class="section-card">
-      <div class="section-header">
-        <h3>Dinner</h3>
-        <span class="muted">{{ meal.time_range }}</span>
-      </div>
-      <div class="section-body">
-        <div class="hero-image">
-          <div>
-            <h4>{{ meal.title }}</h4>
-            <p>{{ meal.subtitle }}</p>
-          </div>
-        </div>
-        <div class="tagline">"{{ meal.subtitle }}"</div>
-      </div>
-    </section>
+{% block content %}
 
-    <section class="section-card">
-      <div class="section-header">
-        {% if routine %}
-          <div>
-            <h3>{{ routine.name|upper }}</h3>
-            <div class="muted">{{ routine_schedule.get_day_of_week_display }} | {{ routine.goal|default:"Rutina asignada para hoy" }}</div>
-          </div>
-        {% else %}
-          <div>
-            <h3>SIN RUTINA HOY</h3>
-            <div class="muted">Asigna una rutina desde la seccion de rutinas.</div>
-          </div>
-        {% endif %}
-      </div>
-      <div class="section-body">
-        <div class="quick-links">
-          <a class="quick-link" href="{% url 'routine-list' %}">Ver rutinas</a>
-          <a class="quick-link primary" href="{% url 'routine-create' %}">Nueva rutina</a>
-        </div>
-        {% if routine %}
-          <div class="grid-3">
-            {% for routine_exercise in routine_exercises %}
-              <div class="tile">
-                <strong>{{ routine_exercise.exercise.name }}</strong>
-                <span>{{ routine_exercise.target_sets }} series x {{ routine_exercise.target_reps }} reps</span>
-                <span>Descanso {{ routine_exercise.rest_seconds }}s</span>
-              </div>
-            {% endfor %}
-          </div>
-          <div class="cta-row">
-            <span>{{ routine_exercises|length }} ejercicios para hoy</span>
-            <a href="{% url 'routine-detail' routine.id %}">Ver detalles</a>
-          </div>
-        {% else %}
-          <div class="empty-state">Crea una rutina y asignala a un dia de la semana para verla aqui.</div>
-          <div class="cta-row">
-            <span>Tu agenda semanal vive en FITtrack</span>
-            <a href="{% url 'routine-create' %}">Crear rutina</a>
-          </div>
-        {% endif %}
-      </div>
-    </section>
+<header class="hero">
+  <div class="logo"><span>FIT</span>track</div>
+  <div class="chip-time" id="chip-time">--</div>
+</header>
+
+{% if messages %}
+<div class="messages">
+  {% for message in messages %}
+  <div class="message {{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section class="section-card">
+  <div class="section-header">
+    <h3>Dinner</h3>
+    <span class="muted">{{ meal.time_range }}</span>
   </div>
-
-  <nav class="bottom-nav">
-    <div class="nav-grid">
-      <a class="nav-item active" href="{% url 'dashboard-home' %}">
-        <svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6.5h-5V21H5a1 1 0 0 1-1-1z"/></svg>
-        <span>Inicio</span>
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24"><path d="M5 5h14v2H5zm0 6h14v2H5zm0 6h14v2H5z"/></svg>
-        <span>Dieta</span>
-      </a>
-      <a class="nav-item" href="{% url 'routine-list' %}">
-        <svg viewBox="0 0 24 24"><path d="M5 6h4l2 4 2-4h4l-3 6 3 6h-4l-2-4-2 4H5l3-6z"/></svg>
-        <span>Rutinas</span>
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>
-        <span>Social</span>
-      </a>
-      <a class="nav-item" href="#">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
-        <span>Perfil</span>
-      </a>
+  <div class="section-body">
+    <div class="hero-image">
+      <div>
+        <h4>{{ meal.title }}</h4>
+        <p>{{ meal.subtitle }}</p>
+      </div>
     </div>
-  </nav>
+    <div class="tagline">"{{ meal.subtitle }}"</div>
+  </div>
+</section>
 
-  <script>
-    (function() {
-      const chipTime = document.getElementById('chip-time');
-      function renderClock() {
-        const now = new Date();
-        const opts = { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-        chipTime.textContent = now.toLocaleString('es-ES', opts).toUpperCase();
-      }
-      renderClock();
-      setInterval(renderClock, 15000);
-    })();
-  </script>
-</body>
-</html>
+<section class="section-card">
+  <div class="section-header">
+    {% if routine %}
+    <div>
+      <h3>{{ routine.name|upper }}</h3>
+      {% with routine.goal|default:"Rutina asignada para hoy" as goal_text %}
+      <div class="muted">
+        {{ routine_schedule.get_day_of_week_display }} | {{ goal_text }}
+      </div>
+      {% endwith %}
+
+    </div>
+    {% else %}
+    <div>
+      <h3>SIN RUTINA HOY</h3>
+      <div class="muted">Asigna una rutina desde la seccion de rutinas.</div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="section-body">
+    <div class="quick-links">
+      <a class="quick-link" href="{% url 'routine-list' %}">Ver rutinas</a>
+      <a class="quick-link primary" href="{% url 'routine-create' %}">Nueva rutina</a>
+    </div>
+    {% if routine %}
+    <div class="grid-3">
+      {% for routine_exercise in routine_exercises %}
+      <div class="tile">
+        <strong>{{ routine_exercise.exercise.name }}</strong>
+        <span>{{ routine_exercise.target_sets }} series x {{ routine_exercise.target_reps }} reps</span>
+        <span>Descanso {{ routine_exercise.rest_seconds }}s</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cta-row">
+      <span>{{ routine_exercises|length }} ejercicios para hoy</span>
+      <a href="{% url 'routine-detail' routine.id %}">Ver detalles</a>
+    </div>
+    {% else %}
+    <div class="empty-state">Crea una rutina y asignala a un dia de la semana para verla aqui.</div>
+    <div class="cta-row">
+      <span>Tu agenda semanal vive en FITtrack</span>
+      <a href="{% url 'routine-create' %}">Crear rutina</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

@@ -47,6 +47,13 @@ class Achievement(models.Model):
     def __str__(self):
         return self.title
     
+class MealCategory(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 class Meal(models.Model):
     name = models.CharField(max_length=255)
     calories = models.IntegerField()
@@ -54,10 +61,19 @@ class Meal(models.Model):
     protein_g = models.IntegerField()
     fat_g = models.IntegerField()
     is_predefined = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='meals/', null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True)
+
+    category = models.ForeignKey(
+        MealCategory,
+        on_delete=models.CASCADE,
+        related_name="meals",
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.name
-    
     
 class FavoriteMeal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_meals")
@@ -108,7 +124,7 @@ class Exercise(models.Model):
     )
     name = models.CharField(max_length=255)
     muscle_group = models.CharField(max_length=255)
-    type = models.CharField(max_length=100)
+    description = models.TextField()
     image_url = models.TextField(
         blank=True,
         validators=[validate_http_image_url],
@@ -149,13 +165,26 @@ class ExerciseRating(models.Model):
 
 class Routine(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="routines")
+    source_routine = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="saved_copies",
+    )
     name = models.CharField(max_length=255)
     goal = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+    
+    def estimated_calories(self):
+        """Calcula calorías estimadas basadas en ejercicios (placeholder para futuro)."""
+        # TODO: Implementar cálculo basado en tipo de ejercicio y duración
+        return 0
     
     
 class RoutineExercise(models.Model):
@@ -232,4 +261,41 @@ class EquipmentRecommendation(models.Model):
     link = models.URLField()
 
     def __str__(self):
-        return self.name        
+        return self.name
+
+
+class MealPlan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="meal_plans")
+    source_meal_plan = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="saved_plan_copies",
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    is_public = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    def total_calories(self):
+        """Calcula el total de calorías del plan."""
+        return sum(item.meal.calories * item.quantity for item in self.items.all())
+
+
+class MealItem(models.Model):
+    meal_plan = models.ForeignKey(MealPlan, on_delete=models.CASCADE, related_name="items")
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE)
+    quantity = models.FloatField(default=1.0)
+    meal_type = models.CharField(max_length=50, blank=True)  # breakfast, lunch, dinner, snack
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order"]
+
+    def __str__(self):
+        return f"{self.meal_plan} - {self.meal}"
