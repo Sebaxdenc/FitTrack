@@ -1,4 +1,9 @@
 from django.db import transaction
+import logging
+import os
+import random
+import os
+from openai import OpenAI
 
 from .exceptions import (
     ExerciseAccessDeniedError,
@@ -8,6 +13,8 @@ from .exceptions import (
     RoutineValidationError,
 )
 from .models import Exercise, Routine, RoutineExercise, RoutineSchedule
+
+logger = logging.getLogger(__name__)
 
 
 def create_exercise(*, user, name, muscle_group, exercise_type, image_url="", equipment_photo=None):
@@ -130,55 +137,23 @@ def delete_routine(*, user, routine_id):
 
 
 def get_ai_recommendations(stats_data):
-    """
-    Obtiene recomendaciones de IA basadas en las estadísticas del usuario.
-    Utiliza OpenAI API para generar recomendaciones personalizadas.
-    """
-    import os
-    from openai import OpenAI
-    
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY no está configurada en las variables de entorno")
-    
-    client = OpenAI(api_key=api_key)
-    
-    # Construir el prompt con los datos de estadísticas
-    prompt = f"""Basándote en las siguientes estadísticas de entrenamiento y salud del usuario, proporciona 3-5 recomendaciones específicas, prácticas y accionables en español:
 
-ESTADÍSTICAS DEL USUARIO (últimos 7 días):
-- Entrenamientos realizados: {stats_data.get('workouts_last_7', 0)}
-- Duración promedio de sesión: {stats_data.get('avg_duration_minutes', 0):.0f} minutos
-- Horas totales entrenadas: {stats_data.get('total_duration_hours', 0):.1f} horas
-- Calorías quemadas (promedio diario): {stats_data.get('avg_calories_burned_7d', 0):.0f} kcal
-- Calorías consumidas (promedio diario): {stats_data.get('avg_calories_consumed_7d', 0):.0f} kcal
-- Racha actual: {stats_data.get('current_streak', 0)} días
-- Tasa de cumplimiento de metas: {stats_data.get('goal_completion_rate', 0):.1f}%
-- Total de entrenamientos realizados: {stats_data.get('total_workouts', 0)}
-- Total de rutinas creadas: {stats_data.get('total_routines', 0)}
 
-Por favor, proporciona recomendaciones que:
-1. Sean específicas basadas en estos números
-2. Incluyan consejos de entrenamiento, nutrición o recuperación
-3. Sean motivacionales pero realistas
-4. Ayuden al usuario a mejorar su progreso
+    client = OpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=os.environ["HF_TOKEN"],
+    )
 
-Formatea la respuesta como una lista con viñetas claras y concisas."""
-
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+    completion = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V4-Pro:novita",
         messages=[
             {
-                "role": "system",
-                "content": "Eres un coach personal y nutricionista experto que proporciona recomendaciones prácticas basadas en datos de salud y entrenamiento. Siempre respondes en español."
-            },
-            {
                 "role": "user",
-                "content": prompt
+                "content": f"Basado en los siguientes datos de rendimiento, recomiendame 5 ejercicios para mejorar mi fuerza y resistencia:\n\n{stats_data}"
             }
         ],
-        temperature=0.7,
-        max_tokens=500
     )
-    
-    return response.choices[0].message.content
+
+print(completion.choices[0].message)
+
+    return "\n".join([f"• {rec}" for rec in selected])

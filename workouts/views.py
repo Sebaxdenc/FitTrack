@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+import logging
 
 from .models import (
     Exercise,
@@ -22,6 +23,8 @@ from .serializers import (
     MealPlanSerializer,
     RoutineSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
