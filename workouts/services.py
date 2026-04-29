@@ -1,13 +1,8 @@
 from django.db import transaction
 import logging
 import os
-import random
-import os
-from openai import OpenAI
-
-import requests
-import os
 import json
+import requests
 
 
 from .exceptions import (
@@ -20,13 +15,6 @@ from .exceptions import (
 from .models import Exercise, Routine, RoutineExercise, RoutineSchedule
 
 logger = logging.getLogger(__name__)
-
-
-API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
-
-headers = {
-    "Authorization": f"Bearer {os.environ.get('HF_TOKEN')}"
-}
 
 def create_exercise(*, user, name, muscle_group, exercise_type, image_url="", equipment_photo=None):
     return Exercise.objects.create(
@@ -148,27 +136,59 @@ def delete_routine(*, user, routine_id):
 
 
 def get_ai_recommendations(stats_data):
-
     prompt = f"""
     Eres un entrenador personal.
 
     Basado en estos datos:
     {json.dumps(stats_data, indent=2)}
 
-    Dame 5 ejercicios para mejorar fuerza y resistencia.
-    Responde en lista.
+    Analiza mis estadisticas
     """
 
-    response = requests.post(
-        API_URL,
-        headers=headers,
-        json={"inputs": prompt}
-    )
+    hf_token = os.getenv("HUGGINGFACE_API_TOKEN") or os.getenv("HF_TOKEN")
+    if not hf_token:
+        raise ValueError("No hay token de Hugging Face configurado. Usa HUGGINGFACE_API_TOKEN o HF_TOKEN en tu .env")
 
-    data = response.json()
+    model = os.getenv("HUGGINGFACE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+    api_url = os.getenv("HUGGINGFACE_API_URL", "https://router.huggingface.co/v1/chat/completions")
 
-    # 👇 importante: HF devuelve lista
-    if isinstance(data, list):
-        return data[0].get("generated_text", "")
-    
-    return data
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "Eres un entrenador personal experto. Responde siempre en espanol y en texto normal (no md)",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.7,
+        "max_tokens": 500,
+    }
+
+    try:
+        response = requests.post(
+            api_url,
+            headers={
+                "Authorization": f"Bearer {hf_token}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+
+        if response.status_code >= 400:
+            raise ValueError(f"Hugging Face devolvio {response.status_code}: {response.text[:300]}")
+
+        data = response.json()
+        text = ""
+        choices = data.get("choices") if isinstance(data, dict) else None
+        if choices and isinstance(choices, list):
+            text = (choices[0].get("message", {}) or {}).get("content", "").strip()
+
+        if not text:
+            raise ValueError("Hugging Face no devolvio recomendaciones en texto.")
+
+        return text
+    except Exception as exc:
+        logger.exception("Error obteniendo recomendaciones de IA")
+        raise ValueError(f"No se pudieron generar recomendaciones: {exc}") from exc
