@@ -1,4 +1,6 @@
 import json
+
+from django.http import JsonResponse
 import os
 import base64
 import requests as http_requests
@@ -17,8 +19,11 @@ from .models import Meal, FavoriteMeal
 from .forms import MealForm
 from openai import OpenAI
 
+from .ai_services import generate_exercise_description
 from .exceptions import (
     ExerciseAccessDeniedError,
+    ExerciseDescriptionConfigurationError,
+    ExerciseDescriptionGenerationError,
     ExerciseError,
     RoutineAccessDeniedError,
     RoutineError,
@@ -379,7 +384,7 @@ class ExerciseListView(LoginRequiredMixin, View):
                     user=request.user,
                     name=form.cleaned_data["name"],
                     muscle_group=form.cleaned_data["muscle_group"],
-                    exercise_type=form.cleaned_data["type"],
+                    description=form.cleaned_data["description"],
                     image_url=form.cleaned_data["image_url"],
                     equipment_photo=form.cleaned_data["equipment_photo"],
                 )
@@ -408,6 +413,39 @@ class ExerciseDeleteView(LoginRequiredMixin, View):
         except (ExerciseError, ExerciseAccessDeniedError) as exc:
             messages.error(request, str(exc))
         return redirect("routine-exercise-list")
+
+
+class ExerciseDescriptionGenerateView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request):
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({"error": "La solicitud no tiene un formato valido."}, status=400)
+
+        name = (payload.get("name") or "").strip()
+        muscle_group = (payload.get("muscle_group") or "").strip()
+        current_description = (payload.get("description") or "").strip()
+
+        if not name or not muscle_group:
+            return JsonResponse(
+                {"error": "Debes completar nombre y grupo muscular antes de usar la IA."},
+                status=400,
+            )
+
+        try:
+            description = generate_exercise_description(
+                name=name,
+                muscle_group=muscle_group,
+                current_description=current_description,
+            )
+        except ExerciseDescriptionConfigurationError as exc:
+            return JsonResponse({"error": str(exc)}, status=503)
+        except ExerciseDescriptionGenerationError as exc:
+            return JsonResponse({"error": str(exc)}, status=502)
+
+        return JsonResponse({"description": description})
 
 
 class RoutineListView(LoginRequiredMixin, View):

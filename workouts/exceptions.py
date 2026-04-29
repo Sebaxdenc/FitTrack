@@ -18,6 +18,14 @@ class ExerciseNotFoundError(ExerciseError):
     """Raised when the requested exercise does not exist."""
 
 
+class ExerciseDescriptionGenerationError(ExerciseError):
+    """Raised when an exercise description cannot be generated."""
+
+
+class ExerciseDescriptionConfigurationError(ExerciseDescriptionGenerationError):
+    """Raised when AI generation is not configured."""
+
+
 class RoutineAccessDeniedError(RoutineError):
     """Raised when a user cannot manage a routine."""
 

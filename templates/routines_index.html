@@ -90,11 +90,11 @@
     }
     .exercise-info strong { display:block; margin-bottom:4px; }
     .exercise-info span { color:var(--muted); font-size:13px; }
-    .exercise-type {
-      color:var(--accent);
+    .exercise-description {
+      color:var(--muted);
       font-size:13px;
-      font-weight:800;
-      white-space:nowrap;
+      text-align:right;
+      max-width:220px;
     }
     .bottom-nav {
       position: fixed;
@@ -220,7 +220,7 @@
                   <strong>{{ exercise.name }}</strong>
                   <span>{{ exercise.muscle_group }}</span>
                 </div>
-                <div class="exercise-type">{{ exercise.type }}</div>
+                <div class="exercise-description">{{ exercise.description|truncatechars:80 }}</div>
               </section>
             {% endfor %}
             <div class="link-row" style="margin-top:4px;">

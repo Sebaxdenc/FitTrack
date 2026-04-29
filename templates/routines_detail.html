@@ -85,7 +85,8 @@
             {% endif %}
             <div>
               <strong>{{ item.sort_order }}. {{ item.exercise.name }}</strong>
-              <p class="muted">{{ item.exercise.muscle_group }} | {{ item.exercise.type }}</p>
+              <p class="muted">{{ item.exercise.muscle_group }}</p>
+              <p class="muted">{{ item.exercise.description }}</p>
               <p class="muted">{{ item.target_sets }} series x {{ item.target_reps }} reps | Descanso {{ item.rest_seconds }} segundos</p>
               <p class="muted">Creado por {{ item.exercise.user.username|default:"usuario" }}</p>
             </div>

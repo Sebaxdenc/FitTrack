@@ -1,11 +1,16 @@
 import shutil
 from pathlib import Path
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from .exceptions import (
+    ExerciseDescriptionConfigurationError,
+    ExerciseDescriptionGenerationError,
+)
 from .models import Exercise
 
 User = get_user_model()
@@ -34,7 +39,7 @@ class ExerciseCreationTests(TestCase):
             {
                 "name": "Press militar",
                 "muscle_group": "Hombros",
-                "type": "Fuerza",
+                "description": "Ejercicio de empuje para fortalecer hombros y triceps.",
                 "image_url": "",
                 "equipment_photo": SimpleUploadedFile(
                     "mancuerna.gif",
@@ -46,9 +51,109 @@ class ExerciseCreationTests(TestCase):
 
         self.assertRedirects(response, reverse("routine-exercise-list"))
         exercise = Exercise.objects.get(name="Press militar")
+        self.assertEqual(exercise.description, "Ejercicio de empuje para fortalecer hombros y triceps.")
         self.assertTrue(exercise.equipment_photo.name.startswith("exercise-equipment/"))
         self.assertEqual(exercise.image_url, "")
         self.assertTrue(exercise.display_image_url.startswith("/media/exercise-equipment/"))
+
+    @patch("workouts.frontend_views.generate_exercise_description")
+    def test_generate_description_endpoint_returns_ai_text(self, generate_description_mock):
+        generate_description_mock.return_value = (
+            "Ejercicio de empuje que fortalece los hombros y mejora la estabilidad superior. "
+            "Ideal para trabajar control y fuerza con una tecnica consistente."
+        )
+
+        response = self.client.post(
+            reverse("exercise-description-generate"),
+            data='{"name":"Press militar","muscle_group":"Hombros","description":""}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "description": (
+                    "Ejercicio de empuje que fortalece los hombros y mejora la estabilidad superior. "
+                    "Ideal para trabajar control y fuerza con una tecnica consistente."
+                )
+            },
+        )
+        generate_description_mock.assert_called_once_with(
+            name="Press militar",
+            muscle_group="Hombros",
+            current_description="",
+        )
+
+    @patch("workouts.frontend_views.generate_exercise_description")
+    def test_generate_description_endpoint_uses_existing_draft(self, generate_description_mock):
+        generate_description_mock.return_value = "Descripcion reescrita."
+
+        response = self.client.post(
+            reverse("exercise-description-generate"),
+            data=(
+                '{"name":"Sentadilla","muscle_group":"Piernas",'
+                '"description":"trabaja piernas pero quiero mejorar este texto"}'
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {"description": "Descripcion reescrita."})
+        generate_description_mock.assert_called_once_with(
+            name="Sentadilla",
+            muscle_group="Piernas",
+            current_description="trabaja piernas pero quiero mejorar este texto",
+        )
+
+    def test_generate_description_endpoint_requires_name_and_muscle_group(self):
+        response = self.client.post(
+            reverse("exercise-description-generate"),
+            data='{"name":"","muscle_group":"","description":"algo"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertJSONEqual(
+            response.content,
+            {"error": "Debes completar nombre y grupo muscular antes de usar la IA."},
+        )
+
+    @patch("workouts.frontend_views.generate_exercise_description")
+    def test_generate_description_endpoint_returns_configuration_error(self, generate_description_mock):
+        generate_description_mock.side_effect = ExerciseDescriptionConfigurationError(
+            "La generacion con IA no esta configurada en este entorno."
+        )
+
+        response = self.client.post(
+            reverse("exercise-description-generate"),
+            data='{"name":"Plancha","muscle_group":"Core","description":""}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertJSONEqual(
+            response.content,
+            {"error": "La generacion con IA no esta configurada en este entorno."},
+        )
+
+    @patch("workouts.frontend_views.generate_exercise_description")
+    def test_generate_description_endpoint_returns_provider_error(self, generate_description_mock):
+        generate_description_mock.side_effect = ExerciseDescriptionGenerationError(
+            "No pudimos generar la descripcion en este momento."
+        )
+
+        response = self.client.post(
+            reverse("exercise-description-generate"),
+            data='{"name":"Burpee","muscle_group":"Cuerpo completo","description":"borrador"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertJSONEqual(
+            response.content,
+            {"error": "No pudimos generar la descripcion en este momento."},
+        )
 
 
 class RoutineViewTests(TestCase):
