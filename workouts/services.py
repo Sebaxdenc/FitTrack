@@ -5,6 +5,11 @@ import random
 import os
 from openai import OpenAI
 
+import requests
+import os
+import json
+
+
 from .exceptions import (
     ExerciseAccessDeniedError,
     ExerciseNotFoundError,
@@ -16,6 +21,12 @@ from .models import Exercise, Routine, RoutineExercise, RoutineSchedule
 
 logger = logging.getLogger(__name__)
 
+
+API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b-it"
+
+headers = {
+    "Authorization": f"Bearer {os.environ.get('HF_TOKEN')}"
+}
 
 def create_exercise(*, user, name, muscle_group, exercise_type, image_url="", equipment_photo=None):
     return Exercise.objects.create(
@@ -138,22 +149,26 @@ def delete_routine(*, user, routine_id):
 
 def get_ai_recommendations(stats_data):
 
+    prompt = f"""
+    Eres un entrenador personal.
 
-    client = OpenAI(
-        base_url="https://router.huggingface.co/v1",
-        api_key=os.environ["HF_TOKEN"],
+    Basado en estos datos:
+    {json.dumps(stats_data, indent=2)}
+
+    Dame 5 ejercicios para mejorar fuerza y resistencia.
+    Responde en lista.
+    """
+
+    response = requests.post(
+        API_URL,
+        headers=headers,
+        json={"inputs": prompt}
     )
 
-    completion = client.chat.completions.create(
-        model="deepseek-ai/DeepSeek-V4-Pro:novita",
-        messages=[
-            {
-                "role": "user",
-                "content": f"Basado en los siguientes datos de rendimiento, recomiendame 5 ejercicios para mejorar mi fuerza y resistencia:\n\n{stats_data}"
-            }
-        ],
-    )
+    data = response.json()
 
-print(completion.choices[0].message)
-
-    return "\n".join([f"• {rec}" for rec in selected])
+    # 👇 importante: HF devuelve lista
+    if isinstance(data, list):
+        return data[0].get("generated_text", "")
+    
+    return data

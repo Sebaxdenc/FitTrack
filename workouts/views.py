@@ -195,7 +195,8 @@ class AIRecommendationsView(APIView):
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print("ERROR REAL IA:", e)
             return Response({
                 "success": False,
-                "error": "Error al obtener recomendaciones de IA. Por favor, intenta más tarde."
+                "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
