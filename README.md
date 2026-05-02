@@ -1,141 +1,150 @@
 # 🏋️‍♂️ Fitness Tracker App
 
-Una aplicación móvil pensada para personas que quieren **entrenar mejor, comer mejor y ver su progreso de forma clara y motivadora**. Desde principiantes hasta deportistas avanzados, este proyecto busca centralizar rutinas, nutrición y metas en un solo lugar.
+A mobile application designed for people who want to **train better, eat better, and track their progress in a clear and motivating way**. From beginners to advanced athletes, this project aims to centralize workouts, nutrition, and goals in one place.
 
 ---
 
-## 🚀 Descripción del proyecto
+## 🚀 Project Description
 
-**Fitness Tracker App** es una aplicación para registrar ejercicios y comidas diarias, descubrir rutinas y dietas de otros usuarios, y hacer seguimiento del progreso físico y nutricional a lo largo del tiempo. El enfoque principal es la **motivación**, la **personalización** y una **experiencia de usuario intuitiva**.
+**Fitness Tracker App** is an application to log exercises and daily meals, discover routines and diets from other users, and track physical and nutritional progress over time. The main focus is **motivation**, **personalization**, and an **intuitive user experience**.
 
-El usuario no necesita memorizar rutinas, llevar papeles ni usar múltiples apps: todo vive aquí 📱
-
----
-
-## 🎯 Objetivos principales
-
-* Facilitar el seguimiento de rutinas de ejercicio desde el celular
-* Ayudar a los usuarios a mantener el control de su alimentación y calorías
-* Motivar mediante metas diarias, rankings y visualización de progreso
-* Ofrecer contenido relevante según el tipo de cuerpo, deporte u objetivo físico
-* Fomentar la comunidad compartiendo rutinas y dietas
+Users don’t need to memorize routines, keep notes, or use multiple apps: everything lives here.
 
 ---
 
-## 👥 Historias de usuario cubiertas
+## 🎯 Main Objectives
 
-La aplicación está diseñada en torno a las siguientes necesidades reales:
-
-* 📋 Guardar rutinas de ejercicio para saber exactamente qué hacer en el gimnasio
-* 🏃‍♀️ Recomendaciones de implementos deportivos para usuarios principiantes
-* 🍽️ Acceso a dietas y rutinas creadas por otros usuarios
-* 🎯 Filtros por deporte, tipo de cuerpo y objetivo físico
-* 👤 Perfil personal con historial, logros y progreso acumulado
-* 🔥 Objetivos diarios de quema de calorías con feedback visual
-* 🥗 Registro rápido de comidas con información nutricional
-* ⚖️ Control del balance calórico (déficit o superávit)
-* ⭐ Rankings de ejercicios y comidas mejor valoradas
-* 🧭 Interfaz intuitiva, clara e interactiva
+* Make it easy to track workout routines from a mobile device
+* Help users manage their nutrition and calorie intake
+* Motivate through daily goals, rankings, and progress visualization
+* Provide relevant content based on body type, sport, or fitness goals
+* Encourage community by sharing routines and diets
 
 ---
 
-## 🧩 Funcionalidades clave
+## 👥 User Stories Covered
 
-### 🏋️ Ejercicio
+The application is designed around the following real needs:
 
-* Rutinas personalizadas
-* Filtro por tipo de ejercicio y disciplina deportiva
-* Ranking de ejercicios mejor valorados
-* Registro de entrenamientos
-
-### 🥗 Nutrición
-
-* Base de datos de comidas predeterminadas
-* Información nutricional (calorías, macros)
-* Control diario de ingesta calórica
-* Comparación entre calorías consumidas vs quemadas
-
-### 📊 Progreso y motivación
-
-* Perfil de usuario con historial
-* Logros y metas alcanzadas
-* Objetivos diarios de calorías
-* Visualización clara del progreso
-
-### 🌍 Comunidad
-
-* Explorar rutinas y dietas de otros usuarios
-* Rankings basados en valoraciones
-* Inspiración cuando el progreso se estanca
+* Save workout routines to know exactly what to do at the gym
+* Recommendations for sports equipment for beginners
+* Access diets and routines created by other users
+* Filters by sport, body type, and fitness goals
+* Personal profile with history, achievements, and progress
+* Daily calorie burn goals with visual feedback
+* Quick meal logging with nutritional information
+* Caloric balance tracking (deficit or surplus)
+* Rankings of top-rated exercises and meals
+* Clear, intuitive, and interactive interface
 
 ---
 
-## 🧠 Público objetivo
+## 🧩 Key Features
 
-* Personas que recién comienzan a entrenar
-* Usuarios fitness con metas estéticas
-* Deportistas que entrenan por rendimiento
-* Personas interesadas en nutrición y control calórico
+### 🏋️ Exercise
+
+* Personalized routines
+* Filtering by exercise type and sport discipline
+* Ranking of top-rated exercises
+* Workout tracking
+
+### 🥗 Nutrition
+
+* Database of predefined meals
+* Nutritional information (calories, macros)
+* Daily calorie intake tracking
+* Comparison between consumed vs burned calories
+
+### 📊 Progress & Motivation
+
+* User profile with history
+* Achievements and goals
+* Daily calorie targets
+* Clear progress visualization
+
+### 🌍 Community
+
+* Explore routines and diets from other users
+* Rankings based on ratings
+* Inspiration when progress stalls
 
 ---
 
-## 🛠️ Estado del proyecto
+## 🧠 Target Audience
 
-📌 En desarrollo
+* Beginners starting their fitness journey
+* Fitness users with aesthetic goals
+* Athletes training for performance
+* People interested in nutrition and calorie tracking
 
-Este proyecto se encuentra en una fase activa de diseño y construcción, siguiendo principios de **desarrollo centrado en el usuario** y buenas prácticas de UX/UI.
+---
+
+## 🛠️ Project Status
+
+📌 In development
+
+This project is currently in an active design and development phase, following **user-centered design principles** and good UX/UI practices.
 
 ---
 
 ## 🔧 Backend (Django + Postgres + DRF)
 
-### Modelado
-- Usuarios (auth de Django)
-- Rutinas: `WorkoutRoutine` con pasos `WorkoutStep`, ejercicios `Exercise`, etiquetas `Tag`, y favoritos por usuario
-- Comidas y dietas: `Meal` (recetas individuales), `MealPlan` con ítems `MealItem`, favoritos de comidas por usuario
+### Modeling
 
-### API principal
-- CRUD de etiquetas, ejercicios, rutinas, comidas y planes de comida
-- Filtros de visibilidad: los no autenticados solo ven contenido público; los autores ven lo propio y lo público
-- Favoritos: endpoints para marcar rutinas y comidas
-- Autenticación: Token o sesión (configurado en DRF)
+* Users (Django auth)
+* Workouts: `WorkoutRoutine` with steps `WorkoutStep`, exercises `Exercise`, tags `Tag`, and user favorites
+* Meals and diets: `Meal` (individual recipes), `MealPlan` with items `MealItem`, and user meal favorites
 
-### Quickstart local
-1. Crea tu entorno: `python -m venv .venv && .venv\Scripts\activate`
-2. Instala dependencias: `pip install -r requirements.txt`
-3. Copia `.env.example` a `.env`
-4. Ejecuta migraciones: `python manage.py migrate`
-5. Arranca servidor: `python manage.py runserver`
+### Main API
 
-### Con Docker
-1. Copia `.env.example` a `.env`
-2. Ejecuta `docker compose up --build`
-3. Docker Compose usa Postgres y aplica migraciones antes de levantar Gunicorn
-4. API disponible en `http://localhost:8000/api/`
+* CRUD for tags, exercises, routines, meals, and meal plans
+* Visibility filters: unauthenticated users only see public content; authors see their own and public content
+* Favorites: endpoints to mark routines and meals
+* Authentication: Token or session (configured in DRF)
 
-### Migraciones
-Si cambias modelos: `python manage.py makemigrations workouts && python manage.py migrate`
+### Local Quickstart
+
+1. Create environment: `python -m venv .venv && .venv\Scripts\activate`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Copy `.env.example` to `.env`
+4. Run migrations: `python manage.py migrate`
+5. Start server: `python manage.py runserver`
+
+### With Docker
+
+1. Copy `.env.example` to `.env`
+2. Run `docker compose up --build`
+3. Docker Compose uses Postgres and applies migrations before starting Gunicorn
+4. API available at `http://localhost:8000/api/`
+
+### Migrations
+
+If you modify models:
+`python manage.py makemigrations workouts && python manage.py migrate`
 
 ### Tests
-Pendiente agregar suite. Recomendado usar `pytest` o `manage.py test` cuando se definan.
 
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas 🙌
-
-Si deseas aportar ideas, mejoras o código:
-
-1. Haz un fork del repositorio
-2. Crea una rama con tu feature
-3. Envía un Pull Request
+Test suite pending. Recommended to use `pytest` or `manage.py test` once defined.
 
 ---
 
-## 📄 Licencia
-Por favor leer la licencia
+## 🤝 Contributions
+
+Contributions are welcome.
+
+If you want to contribute ideas, improvements, or code:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a Pull Request
+
+---
+
+## 📄 License
+
+Please read the license
 [IDGAFPL](https://github.com/My2ndAngelic/IDGAFPL)
 
 ---
 
-💪 *Entrena con intención. Come con conciencia. Progresa con datos.*
+Train with intention. Eat with awareness. Progress with data.
