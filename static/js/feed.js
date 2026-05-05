@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 imageHTML = `
                     <div class="feed-image-container">
                         <img src="${plan.imageMain}" alt="${plan.name}">
-                        <div class="position-absolute bottom-0 start-0 w-100 p-2" style="background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+                        <div class="position-absolute bottom-0 start-0 w-100 p-2 feed-card-overlay">
                              <span class="text-white fw-medium ms-2">Frutas o Batido</span>
                         </div>
                     </div>
@@ -159,12 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="feed-card-header text-uppercase">
                     <span class="feed-card-title">${plan.name}</span>
                     <span class="feed-card-subtitle text-lowercase text-capitalize">${plan.goal}</span>
-                    <div class="small text-secondary mt-1 text-uppercase" style="font-size: 0.7rem;">Por: ${plan.author}</div>
+                    <div class="small text-secondary mt-1 text-uppercase feed-card-author">Por: ${plan.author}</div>
                 </div>
                 <div class="feed-card-body">
                     ${imageHTML}
                     <div class="feed-card-footer mt-2">
-                        <span style="font-family: monospace; font-size: 0.85rem; color: #aaa;">${plan.description}</span>
+                        <span class="feed-card-description">${plan.description}</span>
                         <a class="view-details" data-id="${plan.id}" onclick="openDetails(${plan.id})">Ver detalles ></a>
                     </div>
                 </div>
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 imageHTML = `
                     <div class="feed-image-container">
                         <img src="${plan.imageMain}" alt="${plan.name}">
-                        <div class="position-absolute bottom-0 start-0 w-100 p-2" style="background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+                        <div class="position-absolute bottom-0 start-0 w-100 p-2 feed-card-overlay">
                              <span class="text-white fw-medium ms-2">Frutas o Batido</span>
                         </div>
                     </div>
@@ -224,14 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <span class="feed-card-title">${plan.name}</span>
                         <span class="feed-card-subtitle text-lowercase text-capitalize">${plan.goal}</span>
-                        <div class="small text-secondary mt-1 text-uppercase" style="font-size: 0.7rem;">Por: ${plan.author}</div>
+                        <div class="small text-secondary mt-1 text-uppercase feed-card-author">Por: ${plan.author}</div>
                     </div>
                     <i class="bi bi-check-circle-fill text-neon-green fs-4"></i>
                 </div>
                 <div class="feed-card-body">
                     ${imageHTML}
                     <div class="feed-card-footer mt-2">
-                        <span style="font-family: monospace; font-size: 0.85rem; color: #aaa;">${plan.description}</span>
+                        <span class="feed-card-description">${plan.description}</span>
                         <a class="view-details" data-id="${plan.id}" onclick="openDetails(${plan.id})">Ver detalles ></a>
                     </div>
                 </div>

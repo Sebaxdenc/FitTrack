@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -7,56 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <style>
-    :root { --bg:#0c1016; --muted:#9aa3b5; --accent:#21e36b; --card:rgba(255,255,255,0.04); --shadow:0 18px 40px rgba(0,0,0,0.35); }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; font-family:'Manrope',system-ui,sans-serif; background:radial-gradient(120% 120% at 20% 20%, rgba(0,196,255,.12), transparent 45%), radial-gradient(120% 120% at 80% 0%, rgba(33,227,107,.12), transparent 40%), var(--bg); color:#f5f7fb; padding:28px 16px 80px; }
-    .shell { width:min(960px,100%); margin:0 auto; }
-    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:20px; box-shadow:var(--shadow); padding:20px; margin-bottom:16px; }
-    .brand { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; }
-    .brand span { color:var(--accent); }
-    .muted { color:var(--muted); }
-    .exercise-list { display:grid; gap:12px; }
-    .exercise-item { display:grid; grid-template-columns:84px 1fr; gap:14px; padding:14px; border-radius:18px; background:#101722; border:1px solid rgba(255,255,255,.06); }
-    .exercise-item img,.placeholder { width:84px; height:84px; border-radius:16px; object-fit:cover; display:block; background:linear-gradient(120deg, rgba(33,227,107,.16), rgba(0,196,255,.12)); }
-    .days { display:flex; gap:8px; flex-wrap:wrap; }
-    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:rgba(33,227,107,.12); color:var(--accent); font-size:12px; font-weight:700; }
-    .bottom-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #0b0f15;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 10px 14px 12px;
-      z-index: 50;
-    }
-    .nav-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
-    .nav-item {
-      color: #9aa3b5;
-      text-decoration: none;
-      font-size: 12px;
-      display: grid;
-      gap: 4px;
-      justify-items: center;
-    }
-    .nav-item.active {
-      color: var(--accent);
-      font-weight: 700;
-    }
-    .nav-item svg {
-      width: 22px;
-      height: 22px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-    }
-  </style>
+  <link rel="stylesheet" href="{% static 'css/standalone-base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages/routines-detail.css' %}">
 </head>
 <body>
   <main class="shell">
@@ -71,7 +24,7 @@
           <span class="muted">No hay dias asignados para esta rutina.</span>
         {% endfor %}
       </div>
-      <p><a href="{% url 'routine-list' %}" style="color:#21e36b;text-decoration:none;">Volver a rutinas</a></p>
+      <p class="back-link-row"><a href="{% url 'routine-list' %}" class="back-link">Volver a rutinas</a></p>
     </section>
     <section class="card">
       <h2>Ejercicios de la rutina</h2>

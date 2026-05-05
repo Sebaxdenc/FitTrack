@@ -1,0 +1,26 @@
+.feed-toast-container {
+    z-index: 1060;
+}
+
+@media (min-width: 576px) {
+    body {
+        background-color: #000 !important;
+    }
+
+    main#community-feed {
+        max-width: 500px;
+        margin: 0 auto;
+        background-color: var(--dark-bg);
+        min-height: 100vh;
+        border-left: 1px solid #333;
+        border-right: 1px solid #333;
+    }
+
+    header,
+    nav {
+        max-width: 500px;
+        margin: 0 auto;
+        left: 0;
+        right: 0;
+    }
+}

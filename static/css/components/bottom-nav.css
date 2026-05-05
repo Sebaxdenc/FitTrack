@@ -1,0 +1,39 @@
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0b0f15;
+    border-top: 1px solid var(--border);
+    padding: 10px 14px 12px;
+    z-index: 50;
+}
+
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.nav-item {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+}
+
+.nav-item.active {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+}

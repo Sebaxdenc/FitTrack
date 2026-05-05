@@ -1,180 +1,10 @@
 {% extends "dashboard/base.html" %}
+{% load static %}
 
 {% block title %}Social{% endblock %}
 
 {% block extra_css %}
-<style>
-  .tabs {
-    margin-top: 14px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
-  .tab-link {
-    min-height: 44px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0f141c;
-    color: #f5f7fb;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .tab-link.active {
-    background: linear-gradient(120deg, #21e36b, #00c4ff);
-    color: #0c1016;
-    border: none;
-  }
-
-  .social-list {
-    margin-top: 14px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .social-card,
-  .detail-card {
-    background: #0f141c;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 12px;
-  }
-
-  .social-card {
-    text-decoration: none;
-    color: inherit;
-    display: grid;
-    grid-template-columns: 88px 1fr;
-    gap: 12px;
-    align-items: center;
-    position: relative;
-  }
-
-  .sim-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 11px;
-    font-weight: 800;
-    color: #0c1016;
-    background: linear-gradient(120deg, #21e36b, #00c4ff);
-    border-radius: 999px;
-    padding: 4px 8px;
-  }
-
-  .social-thumb {
-    width: 88px;
-    height: 88px;
-    border-radius: 12px;
-    background: linear-gradient(120deg, rgba(33, 227, 107, .16), rgba(0, 196, 255, .12));
-    display: grid;
-    place-items: center;
-    font-size: 28px;
-  }
-
-  .social-meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 6px;
-  }
-
-  .social-author {
-    color: var(--accent);
-    font-size: 13px;
-    margin-top: 4px;
-  }
-
-  .detail-title {
-    margin: 0 0 4px 0;
-    font-size: 18px;
-  }
-
-  .exercise-list {
-    margin-top: 12px;
-    display: grid;
-    gap: 8px;
-  }
-
-  .exercise-item {
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .save-form {
-    margin-top: 12px;
-  }
-
-  .save-btn {
-    width: 100%;
-    min-height: 44px;
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(120deg, #21e36b, #00c4ff);
-    color: #0c1016;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .save-btn[disabled] {
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--muted);
-    cursor: not-allowed;
-  }
-
-  .empty-state {
-    margin-top: 12px;
-    background: #0f141c;
-    border-radius: 12px;
-    border: 1px dashed rgba(255, 255, 255, 0.12);
-    color: var(--muted);
-    text-align: center;
-    padding: 18px;
-  }
-
-  .search-form {
-    margin-top: 12px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-  }
-
-  .search-input {
-    width: 100%;
-    min-height: 42px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: #0f141c;
-    color: #f5f7fb;
-    padding: 0 12px;
-    outline: none;
-  }
-
-  .search-btn {
-    min-height: 42px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(120deg, #21e36b, #00c4ff);
-    color: #0c1016;
-    font-weight: 800;
-    padding: 0 14px;
-    cursor: pointer;
-  }
-</style>
+<link rel="stylesheet" href="{% static 'css/pages/dashboard-social.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -218,12 +48,12 @@
       <button class="search-btn" type="submit">Buscar</button>
     </form>
     {% if search_query and search_mode == 'text' %}
-    <div class="muted" style="margin-top:8px;">No se pudo usar embeddings (API key faltante o error de cuota/API): se aplico filtro por texto simple.</div>
+    <div class="muted semantic-hint">No se pudo usar embeddings (API key faltante o error de cuota/API): se aplico filtro por texto simple.</div>
     {% elif search_query and search_mode == 'embedding' %}
-    <div class="muted" style="margin-top:8px;">Embeddings activos ({{ search_provider }}): resultados ordenados por similitud semantica del titulo.</div>
-    <div class="muted" style="margin-top:4px;">La similitud se muestra en cada card como porcentaje.</div>
+    <div class="muted semantic-hint">Embeddings activos ({{ search_provider }}): resultados ordenados por similitud semantica del titulo.</div>
+    <div class="muted semantic-hint-tight">La similitud se muestra en cada card como porcentaje.</div>
     {% elif search_query %}
-    <div class="muted" style="margin-top:8px;">No se pudo calcular embeddings en este intento; se mostraron coincidencias por texto.</div>
+    <div class="muted semantic-hint">No se pudo calcular embeddings en este intento; se mostraron coincidencias por texto.</div>
     {% endif %}
   </div>
 </section>
@@ -258,7 +88,7 @@
   </div>
 </section>
 
-<div style="display:none;">
+<div class="detail-templates">
   {% for routine in public_routines %}
   <div id="routine-{{ routine.id }}" class="detail-template">
     <article class="detail-card">
@@ -269,7 +99,7 @@
         <span>{{ routine.exercises.count }} ejercicios</span>
       </div>
       {% if routine.description %}
-      <p class="muted" style="margin-top:8px;">{{ routine.description }}</p>
+      <p class="muted detail-description">{{ routine.description }}</p>
       {% endif %}
       <div class="exercise-list">
         {% for item in routine.exercises.all %}
@@ -322,7 +152,7 @@
             {% endif %}
           </div>
           {% if meal_plan.description %}
-          <div class="muted" style="margin-top:6px;">{{ meal_plan.description|truncatewords:12 }}</div>
+          <div class="muted detail-description-preview">{{ meal_plan.description|truncatewords:12 }}</div>
           {% endif %}
         </div>
       </a>
@@ -334,7 +164,7 @@
   </div>
 </section>
 
-<div style="display:none;">
+<div class="detail-templates">
   {% for meal_plan in public_meal_plans %}
   <div id="meal-{{ meal_plan.id }}" class="detail-template">
     <article class="detail-card">
@@ -345,7 +175,7 @@
         <span>{{ meal_plan.total_calories }} kcal</span>
       </div>
       {% if meal_plan.description %}
-      <p class="muted" style="margin-top:8px;">{{ meal_plan.description }}</p>
+      <p class="muted detail-description">{{ meal_plan.description }}</p>
       {% endif %}
       <div class="exercise-list">
         {% for item in meal_plan.items.all %}
@@ -388,7 +218,7 @@
         {% endif %}
         <div class="social-thumb">
           {% if exercise.display_image_url %}
-          <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+          <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" class="social-thumb-image">
           {% else %}
           💪
           {% endif %}
@@ -413,7 +243,7 @@
   </div>
 </section>
 
-<div style="display:none;">
+<div class="detail-templates">
   {% for exercise in public_exercises %}
   <div id="exercise-{{ exercise.id }}" class="detail-template">
     <article class="detail-card">
@@ -424,8 +254,8 @@
         <span>{{ exercise.type }}</span>
       </div>
       {% if exercise.display_image_url %}
-      <div style="margin-top: 12px;">
-        <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+      <div class="detail-image-wrap">
+        <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" class="detail-image">
       </div>
       {% endif %}
       {% if request.user.is_authenticated %}
@@ -447,11 +277,11 @@
 </div>
 {% endif %}
 
-<div id="detail-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:90;"></div>
-<div id="detail-sheet" style="position:fixed; left:0; right:0; bottom:-100%; max-height:75vh; overflow:auto; background:#0c1016; border-top-left-radius:18px; border-top-right-radius:18px; border:1px solid rgba(255,255,255,.08); box-shadow:0 -18px 40px rgba(0,0,0,.45); z-index:95; transition:bottom .28s ease; padding:12px 12px calc(12px + env(safe-area-inset-bottom));">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+<div id="detail-overlay" class="detail-overlay"></div>
+<div id="detail-sheet" class="detail-sheet">
+  <div class="detail-sheet-header">
     <strong>Detalle</strong>
-    <button id="close-sheet" type="button" style="background:none; border:none; color:#f5f7fb; font-size:20px; cursor:pointer;">×</button>
+    <button id="close-sheet" type="button" class="detail-sheet-close">×</button>
   </div>
   <div id="detail-sheet-content"></div>
 </div>
@@ -474,16 +304,16 @@
       const template = document.getElementById(detailId);
       if (!template) return;
       content.innerHTML = template.innerHTML;
-      overlay.style.display = 'block';
-      sheet.style.bottom = '0';
-      document.body.style.overflow = 'hidden';
+      overlay.classList.add('is-visible');
+      sheet.classList.add('is-open');
+      document.body.classList.add('is-sheet-open');
     }
 
     function closeSheet() {
-      sheet.style.bottom = '-100%';
-      overlay.style.display = 'none';
+      sheet.classList.remove('is-open');
+      overlay.classList.remove('is-visible');
       content.innerHTML = '';
-      document.body.style.overflow = '';
+      document.body.classList.remove('is-sheet-open');
     }
 
     openerLinks.forEach((link) => {
