@@ -1,4 +1,9 @@
 from django.db import transaction
+import logging
+import os
+import json
+import requests
+
 
 from .exceptions import (
     ExerciseAccessDeniedError,
@@ -9,6 +14,7 @@ from .exceptions import (
 )
 from .models import Exercise, Routine, RoutineExercise, RoutineSchedule
 
+logger = logging.getLogger(__name__)
 
 def create_exercise(*, user, name, muscle_group, description, image_url="", equipment_photo=None):
     return Exercise.objects.create(
@@ -130,55 +136,59 @@ def delete_routine(*, user, routine_id):
 
 
 def get_ai_recommendations(stats_data):
+    prompt = f"""
+    Eres un entrenador personal.
+
+    Basado en estos datos:
+    {json.dumps(stats_data, indent=2)}
+
+    Analiza mis estadisticas
     """
-    Obtiene recomendaciones de IA basadas en las estadísticas del usuario.
-    Utiliza OpenAI API para generar recomendaciones personalizadas.
-    """
-    import os
-    from openai import OpenAI
-    
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY no está configurada en las variables de entorno")
-    
-    client = OpenAI(api_key=api_key)
-    
-    # Construir el prompt con los datos de estadísticas
-    prompt = f"""Basándote en las siguientes estadísticas de entrenamiento y salud del usuario, proporciona 3-5 recomendaciones específicas, prácticas y accionables en español:
 
-ESTADÍSTICAS DEL USUARIO (últimos 7 días):
-- Entrenamientos realizados: {stats_data.get('workouts_last_7', 0)}
-- Duración promedio de sesión: {stats_data.get('avg_duration_minutes', 0):.0f} minutos
-- Horas totales entrenadas: {stats_data.get('total_duration_hours', 0):.1f} horas
-- Calorías quemadas (promedio diario): {stats_data.get('avg_calories_burned_7d', 0):.0f} kcal
-- Calorías consumidas (promedio diario): {stats_data.get('avg_calories_consumed_7d', 0):.0f} kcal
-- Racha actual: {stats_data.get('current_streak', 0)} días
-- Tasa de cumplimiento de metas: {stats_data.get('goal_completion_rate', 0):.1f}%
-- Total de entrenamientos realizados: {stats_data.get('total_workouts', 0)}
-- Total de rutinas creadas: {stats_data.get('total_routines', 0)}
+    hf_token = os.getenv("HUGGINGFACE_API_TOKEN") or os.getenv("HF_TOKEN")
+    if not hf_token:
+        raise ValueError("No hay token de Hugging Face configurado. Usa HUGGINGFACE_API_TOKEN o HF_TOKEN en tu .env")
 
-Por favor, proporciona recomendaciones que:
-1. Sean específicas basadas en estos números
-2. Incluyan consejos de entrenamiento, nutrición o recuperación
-3. Sean motivacionales pero realistas
-4. Ayuden al usuario a mejorar su progreso
+    model = os.getenv("HUGGINGFACE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+    api_url = os.getenv("HUGGINGFACE_API_URL", "https://router.huggingface.co/v1/chat/completions")
 
-Formatea la respuesta como una lista con viñetas claras y concisas."""
-
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
+    payload = {
+        "model": model,
+        "messages": [
             {
                 "role": "system",
-                "content": "Eres un coach personal y nutricionista experto que proporciona recomendaciones prácticas basadas en datos de salud y entrenamiento. Siempre respondes en español."
+                "content": "Eres un entrenador personal experto. Responde siempre en espanol y en texto normal (no md)",
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt},
         ],
-        temperature=0.7,
-        max_tokens=500
-    )
-    
-    return response.choices[0].message.content
+        "temperature": 0.7,
+        "max_tokens": 500,
+    }
+
+    try:
+        response = requests.post(
+            api_url,
+            headers={
+                "Authorization": f"Bearer {hf_token}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+
+        if response.status_code >= 400:
+            raise ValueError(f"Hugging Face devolvio {response.status_code}: {response.text[:300]}")
+
+        data = response.json()
+        text = ""
+        choices = data.get("choices") if isinstance(data, dict) else None
+        if choices and isinstance(choices, list):
+            text = (choices[0].get("message", {}) or {}).get("content", "").strip()
+
+        if not text:
+            raise ValueError("Hugging Face no devolvio recomendaciones en texto.")
+
+        return text
+    except Exception as exc:
+        logger.exception("Error obteniendo recomendaciones de IA")
+        raise ValueError(f"No se pudieron generar recomendaciones: {exc}") from exc

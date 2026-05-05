@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+import logging
 
 from .models import (
     Exercise,
@@ -23,6 +24,8 @@ from .serializers import (
     MealPlanSerializer,
     RoutineSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -193,7 +196,8 @@ class AIRecommendationsView(APIView):
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print("ERROR REAL IA:", e)
             return Response({
                 "success": False,
-                "error": "Error al obtener recomendaciones de IA. Por favor, intenta más tarde."
+                "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

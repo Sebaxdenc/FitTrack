@@ -26,8 +26,7 @@
             </div>
             {% if stats.current_streak > 0 %}
             <div class="streak-badge">
-                🔥 {{ stats.current_streak }} día{{ stats.current_streak|pluralize:",s" }} seguido{{
-                stats.current_streak|pluralize:",s" }}
+                🔥 {{ stats.current_streak }} día{{ stats.current_streak|pluralize:",s" }} seguido{{ stats.current_streak|pluralize:",s" }}
             </div>
             {% endif %}
         </div>
