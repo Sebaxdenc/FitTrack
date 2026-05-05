@@ -1,0 +1,40 @@
+:root {
+    --bg: #0c1016;
+    --bg-alt: #0b1016;
+    --panel: rgba(16, 23, 34, 0.88);
+    --card: rgba(255, 255, 255, 0.04);
+    --card-solid: #101722;
+    --muted: #9aa3b5;
+    --muted-soft: #96a3b8;
+    --accent: #21e36b;
+    --accent-2: #00c4ff;
+    --accent-3: #ff6b6b;
+    --text: #f5f7fb;
+    --danger: #ff9a9a;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-soft: rgba(255, 255, 255, 0.06);
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    --shadow-strong: 0 24px 60px rgba(0, 0, 0, 0.38);
+    --radius: 24px;
+    --radius-md: 20px;
+    --radius-sm: 14px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    color-scheme: dark;
+}
+
+body {
+    margin: 0;
+    color: var(--text);
+}
+
+img {
+    max-width: 100%;
+}

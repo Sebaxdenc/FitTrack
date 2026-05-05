@@ -5,24 +5,16 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/stats.css' %}">
-<style>
-    .app-shell {
-        width: min(1040px, 100%);
-    }
-</style>
 {% endblock %}
 
 {% block content %}
-
 <main class="shell">
-    <!-- ── Header ── -->
     <section class="card">
         <div class="brand"><span>FIT</span>track</div>
-        <div class="header-row" style="margin-top:12px;">
+        <div class="header-row header-row-spacing">
             <div>
                 <h1>Mis estadísticas</h1>
-                <p class="muted" style="margin-top:4px;">Hola, {{ user.get_short_name|default:user.username }}
-                    &middot; últimos 7 días</p>
+                <p class="muted header-subtitle">Hola, {{ user.get_short_name|default:user.username }} &middot; últimos 7 días</p>
             </div>
             {% if stats.current_streak > 0 %}
             <div class="streak-badge">
@@ -30,10 +22,9 @@
             </div>
             {% endif %}
         </div>
-        <p style="margin-top:10px;"><a href="{% url 'dashboard-home' %}">← Volver al inicio</a></p>
+        <p class="stats-back-link"><a href="{% url 'dashboard-home' %}">← Volver al inicio</a></p>
     </section>
 
-    <!-- ── KPIs ── -->
     <p class="section-label">Resumen general</p>
     <div class="kpi-grid">
         <div class="kpi">
@@ -58,10 +49,8 @@
         </div>
     </div>
 
-    <!-- ── Actividad semanal ── -->
     <p class="section-label">Actividad semanal</p>
     <div class="grid-2">
-
         <section class="card">
             <div class="chart-header">
                 <h3>Entrenamientos por día</h3>
@@ -77,13 +66,10 @@
             </div>
             <div class="chart-wrap"><canvas id="durationChart"></canvas></div>
         </section>
-
     </div>
 
-    <!-- ── Calorías ── -->
     <p class="section-label">Calorías</p>
     <div class="grid-3">
-
         <section class="card">
             <div class="chart-header">
                 <h3>Consumidas vs Quemadas</h3>
@@ -105,101 +91,88 @@
             </div>
             <div class="cal-mini-card">
                 <div class="kpi-label">Balance neto</div>
-                <div class="kpi-value" style="font-size:1.45rem;color:var(--muted);">
-                    {% with net=stats.avg_calories_consumed_7d|add:stats.avg_calories_burned_7d %}
+                <div class="kpi-value kpi-value-muted">
                     {% if stats.avg_calories_consumed_7d > stats.avg_calories_burned_7d %}
-                    <span style="color:var(--accent3);">+{{ stats.avg_calories_consumed_7d }}</span>
+                    <span class="net-positive">+{{ stats.avg_calories_consumed_7d }}</span>
                     {% else %}
-                    <span style="color:var(--accent);">{{ stats.avg_calories_consumed_7d }}</span>
+                    <span class="net-neutral">{{ stats.avg_calories_consumed_7d }}</span>
                     {% endif %}
-                    {% endwith %}
                 </div>
                 <div class="kpi-sub">consumidas − quemadas</div>
             </div>
         </div>
 
-        <!-- Rutinas info -->
         <section class="card">
-            <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Rutinas</h3>
+            <h3 class="section-card-title">Rutinas</h3>
             <div class="stat-row">
                 <span class="stat-row-label">Total rutinas</span>
                 <span class="stat-row-val">{{ stats.total_routines }}</span>
             </div>
             <div class="stat-row">
                 <span class="stat-row-label">Días programados</span>
-                <span class="stat-row-val" style="color:var(--accent);">{{ stats.scheduled_days }}/7</span>
+                <span class="stat-row-val accent-value">{{ stats.scheduled_days }}/7</span>
             </div>
             <div class="stat-row">
                 <span class="stat-row-label">Racha actual</span>
-                <span class="stat-row-val" style="color:#ff8f60;">🔥 {{ stats.current_streak }}d</span>
+                <span class="stat-row-val streak-value">🔥 {{ stats.current_streak }}d</span>
             </div>
             <div class="stat-row">
                 <span class="stat-row-label">Total entrenamientos</span>
                 <span class="stat-row-val">{{ stats.total_workouts }}</span>
             </div>
         </section>
-
     </div>
 
-    <!-- ── Objetivos y logros ── -->
     <p class="section-label">Objetivos y logros</p>
     <div class="grid-2">
-
-        <!-- Metas -->
         <section class="card">
             <div class="chart-header">
                 <h3>Metas completadas por semana</h3>
                 <span class="pill">30 días</span>
             </div>
             <div class="chart-wrap"><canvas id="goalsChart"></canvas></div>
-            <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px;">
-                <span class="muted">Total metas: <strong style='color:#f5f7fb;'>{{ stats.total_goals }}</strong><span />
-                    <span class="muted">Tasa de éxito: <strong
-                            style='color:var(--accent);'>{{stats.goal_completion_rate}}%</strong><span />
+            <div class="goal-summary">
+                <span class="muted">Total metas: <strong>{{ stats.total_goals }}</strong></span>
+                <span class="muted">Tasa de éxito: <strong class="goal-rate-strong">{{ stats.goal_completion_rate }}%</strong></span>
             </div>
         </section>
 
-        <!-- Meta de hoy + logros -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-
-            <section class="card" style="flex:0 0 auto;">
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Meta de hoy</h3>
+        <div class="goal-layout">
+            <section class="card goal-card-fixed">
+                <h3 class="goal-title">Meta de hoy</h3>
                 {% if stats.todays_goal %}
                 {% if stats.todays_goal.completed %}
-                <p style="color:var(--accent);font-weight:700;font-size:15px;">✓ ¡Meta cumplida!</p>
+                <p class="goal-complete">✓ ¡Meta cumplida!</p>
                 {% else %}
-                <p style="font-weight:600;font-size:13px;color:var(--muted);">En progreso…</p>
+                <p class="goal-progress">En progreso…</p>
                 {% endif %}
-                <p class="muted" style="font-size:11px;margin-top:8px;margin-bottom:2px;">Calorías quemadas</p>
-                <p style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;line-height:1;">
+                <p class="muted goal-calories-label">Calorías quemadas</p>
+                <p class="goal-calories-value">
                     {{ stats.todays_goal.burn_calories_current }}
-                    <span style="font-size:.85rem;font-weight:400;color:var(--muted);">
-                        / {{stats.todays_goal.burn_calories_target }} kcal</span>
+                    <span class="goal-calories-target">/ {{ stats.todays_goal.burn_calories_target }} kcal</span>
                 </p>
                 <div class="goal-bar-outer">
-                    <div class="goal-bar-inner"
-                        style="width:{% widthratio stats.todays_goal.burn_calories_current stats.todays_goal.burn_calories_target 100 %}%;">
+                    <div
+                        class="goal-bar-inner"
+                        id="goalBarProgress"
+                        data-progress="{% widthratio stats.todays_goal.burn_calories_current stats.todays_goal.burn_calories_target 100 %}">
                     </div>
                 </div>
                 <div class="goal-row">
                     <span><strong>{{ stats.todays_goal.burn_calories_current }}</strong> quemadas</span>
                     <span>meta: <strong>{{ stats.todays_goal.burn_calories_target }}</strong></span>
                 </div>
-                <!-- Mini donut -->
-                <div style="position:relative;height:90px;margin-top:14px;">
+                <div class="goal-progress-canvas">
                     <canvas id="goalRateChart"></canvas>
                 </div>
-                <p
-                    style="text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent);margin-top:4px;">
-                    {{ stats.goal_completion_rate }}% completado (30d)
-                </p>
+                <p class="goal-progress-rate">{{ stats.goal_completion_rate }}% completado (30d)</p>
                 {% else %}
-                <p class="muted" style="font-size:13px;">No hay meta registrada para hoy.</p>
+                <p class="muted goal-empty">No hay meta registrada para hoy.</p>
                 {% endif %}
             </section>
 
-            <section class="card" style="flex:1;">
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">Logros recientes</h3>
+            <section class="card goal-card-flex">
+                <h3 class="goal-title">Logros recientes</h3>
                 {% if stats.recent_achievements %}
                 {% for ach in stats.recent_achievements %}
                 <div class="ach-item">
@@ -211,115 +184,66 @@
                 </div>
                 {% endfor %}
                 {% else %}
-                <p class="muted" style="font-size:13px;">Aún no tienes logros. ¡Sigue entrenando!</p>
+                <p class="muted recent-empty">Aún no tienes logros. ¡Sigue entrenando!</p>
                 {% endif %}
             </section>
-
         </div>
     </div>
 
-    <!-- ── Recomendaciones de IA ── -->
-    <p class="section-label" style="margin-top:32px;">Recomendaciones personalizadas</p>
+    <p class="section-label section-label-spaced">Recomendaciones personalizadas</p>
     <section class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="font-size:14px;font-weight:700;">Sugerencias de mejora basadas en IA</h3>
-            <button 
-                id="aiButton" 
-                type="button" 
-                style="
-                    padding:8px 16px;
-                    background:linear-gradient(135deg, #21e36b 0%, #00c4ff 100%);
-                    color:#0a0e27;
-                    border:none;
-                    border-radius:6px;
-                    font-weight:700;
-                    font-size:12px;
-                    cursor:pointer;
-                    transition:all 0.3s ease;
-                    display:flex;
-                    align-items:center;
-                    gap:6px;
-                "
-                onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)';"
-                onmouseout="this.style.opacity='1';this.style.transform='translateY(0)';"
-            >
+        <div class="ai-header">
+            <h3 class="ai-card-title">Sugerencias de mejora basadas en IA</h3>
+            <button id="aiButton" type="button" class="ai-button">
                 <span>🤖</span>
                 <span id="buttonText">Obtener recomendaciones</span>
             </button>
         </div>
-        
-        <div id="recommendationsContainer" style="display:none;margin-top:16px;">
-            <div id="loadingSpinner" style="text-align:center;padding:20px;display:none;">
-                <div style="
-                    border:3px solid rgba(33,227,107,.2);
-                    border-top:3px solid #21e36b;
-                    border-radius:50%;
-                    width:30px;
-                    height:30px;
-                    animation:spin 1s linear infinite;
-                    margin:0 auto;
-                " id="spinner"></div>
-                <p style="margin-top:12px;color:#9aa3b5;">Consultando con la IA...</p>
+
+        <div id="recommendationsContainer" class="recommendations-container">
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner-circle"></div>
+                <p class="loading-label">Consultando con la IA...</p>
             </div>
-            <div id="recommendationsText" style="
-                line-height:1.6;
-                color:#e0e6ed;
-                font-size:13px;
-                padding:12px;
-                background:rgba(33,227,107,.05);
-                border-left:3px solid #21e36b;
-                border-radius:4px;
-                display:none;
-            "></div>
-            <div id="errorMessage" style="
-                display:none;
-                padding:12px;
-                background:rgba(255,100,100,.1);
-                border-left:3px solid #ff6464;
-                border-radius:4px;
-                color:#ff6464;
-                font-size:13px;
-            "></div>
+            <div id="recommendationsText" class="recommendations-text"></div>
+            <div id="errorMessage" class="error-message"></div>
         </div>
 
-        <p class="muted" style="font-size:12px;margin-top:12px;line-height:1.5;">
+        <p class="muted ai-helper">
             💡 Las recomendaciones se generan basándose en tus estadísticas de los últimos 7 días. Incluye sugerencias sobre entrenamiento, nutrición y recuperación.
         </p>
     </section>
 </main>
-
-<style>
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
-
+{% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // AI Recommendations functionality
     const aiButton = document.getElementById('aiButton');
     const recommendationsContainer = document.getElementById('recommendationsContainer');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const recommendationsText = document.getElementById('recommendationsText');
     const errorMessage = document.getElementById('errorMessage');
     const buttonText = document.getElementById('buttonText');
+    const goalBarProgress = document.getElementById('goalBarProgress');
+
+    if (goalBarProgress) {
+        goalBarProgress.style.width = `${goalBarProgress.dataset.progress || 0}%`;
+    }
 
     aiButton.addEventListener('click', async function() {
-        // Disable button and show loading
         aiButton.disabled = true;
-        aiButton.style.opacity = '0.6';
+        aiButton.classList.add('is-loading');
         buttonText.textContent = 'Cargando...';
 
-        recommendationsContainer.style.display = 'block';
-        loadingSpinner.style.display = 'block';
-        recommendationsText.style.display = 'none';
-        errorMessage.style.display = 'none';
+        recommendationsContainer.classList.add('is-visible');
+        loadingSpinner.classList.add('is-visible');
+        recommendationsText.classList.remove('is-visible');
+        errorMessage.classList.remove('is-visible');
+        recommendationsText.innerHTML = '';
+        errorMessage.textContent = '';
 
         try {
-            // Get stats data from the page
             const statsData = {
                 workouts_last_7: {{ stats.workouts_last_7 }},
                 workouts_last_30: {{ stats.workouts_last_30 }},
@@ -335,7 +259,6 @@
                 scheduled_days: {{ stats.scheduled_days }}
             };
 
-            // Call the AI endpoint
             const response = await fetch('/api/ai/recommendations/', {
                 method: 'POST',
                 headers: {
@@ -347,7 +270,7 @@
 
             const data = await response.json();
 
-            loadingSpinner.style.display = 'none';
+            loadingSpinner.classList.remove('is-visible');
 
             if (data.success) {
                 recommendationsText.innerHTML = data.recommendations
@@ -355,29 +278,28 @@
                     .filter(line => line.trim())
                     .map(line => {
                         if (line.startsWith('•') || line.startsWith('-') || line.match(/^\d+\./)) {
-                            return `<div style="margin-bottom:10px;">${line}</div>`;
+                            return `<div class="recommendation-line">${line}</div>`;
                         }
                         return line;
                     })
                     .join('');
-                recommendationsText.style.display = 'block';
+                recommendationsText.classList.add('is-visible');
             } else {
                 errorMessage.textContent = data.error || 'Error al obtener recomendaciones';
-                errorMessage.style.display = 'block';
+                errorMessage.classList.add('is-visible');
             }
         } catch (error) {
             console.error('Error:', error);
-            loadingSpinner.style.display = 'none';
+            loadingSpinner.classList.remove('is-visible');
             errorMessage.textContent = 'Error al conectar con el servidor. Por favor, intenta más tarde.';
-            errorMessage.style.display = 'block';
+            errorMessage.classList.add('is-visible');
         } finally {
             aiButton.disabled = false;
-            aiButton.style.opacity = '1';
+            aiButton.classList.remove('is-loading');
             buttonText.textContent = 'Obtener recomendaciones';
         }
     });
 
-    // Helper function to get CSRF token
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -392,11 +314,7 @@
         }
         return cookieValue;
     }
-</script>
-{% endblock %}
 
-<!-- ── Charts ── -->
-<script>
     Chart.defaults.color = '#9aa3b5';
     Chart.defaults.font.family = "'Manrope', sans-serif";
     Chart.defaults.font.size = 12;
@@ -406,9 +324,9 @@
     const BORDER = 'rgba(255,255,255,.07)';
     const GRID = { color: BORDER, drawBorder: false };
 
-    const workoutData = {{ weekly_workout_json| safe }};
-    const calorieData = {{ weekly_calorie_json| safe }};
-    const goalsData = {{ goals_by_week_json| safe }};
+    const workoutData = {{ weekly_workout_json|safe }};
+    const calorieData = {{ weekly_calorie_json|safe }};
+    const goalsData = {{ goals_by_week_json|safe }};
 
     const dayLabels = workoutData.map(d => d.label);
     const workoutCounts = workoutData.map(d => d.count);
@@ -426,7 +344,6 @@
         ticks: { color: '#9aa3b5' }
     };
 
-    // 1. Workout bars
     new Chart(document.getElementById('workoutChart'), {
         type: 'bar',
         data: {
@@ -434,11 +351,13 @@
             datasets: [{
                 data: workoutCounts,
                 backgroundColor: workoutCounts.map(v => v > 0 ? 'rgba(33,227,107,.75)' : 'rgba(255,255,255,.06)'),
-                borderRadius: 8, borderSkipped: false
+                borderRadius: 8,
+                borderSkipped: false
             }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: noLegend },
             scales: {
                 x: { ...baseScale, grid: { display: false } },
@@ -447,20 +366,25 @@
         }
     });
 
-    // 2. Duration line
     new Chart(document.getElementById('durationChart'), {
         type: 'line',
         data: {
             labels: dayLabels,
             datasets: [{
                 data: durationMins,
-                borderColor: ACCENT2, backgroundColor: 'rgba(0,196,255,.08)',
-                borderWidth: 2.5, pointBackgroundColor: ACCENT2,
-                pointRadius: 5, pointHoverRadius: 7, tension: 0.4, fill: true
+                borderColor: ACCENT2,
+                backgroundColor: 'rgba(0,196,255,.08)',
+                borderWidth: 2.5,
+                pointBackgroundColor: ACCENT2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                tension: 0.4,
+                fill: true
             }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: noLegend },
             scales: {
                 x: { ...baseScale, grid: { display: false } },
@@ -469,24 +393,30 @@
         }
     });
 
-    // 3. Calories grouped bar
     new Chart(document.getElementById('caloriesChart'), {
         type: 'bar',
         data: {
             labels: dayLabels,
             datasets: [
                 {
-                    label: 'Consumidas', data: calConsumed,
-                    backgroundColor: 'rgba(33,227,107,.7)', borderRadius: 6, borderSkipped: false
+                    label: 'Consumidas',
+                    data: calConsumed,
+                    backgroundColor: 'rgba(33,227,107,.7)',
+                    borderRadius: 6,
+                    borderSkipped: false
                 },
                 {
-                    label: 'Quemadas', data: calBurned,
-                    backgroundColor: 'rgba(0,196,255,.7)', borderRadius: 6, borderSkipped: false
+                    label: 'Quemadas',
+                    data: calBurned,
+                    backgroundColor: 'rgba(0,196,255,.7)',
+                    borderRadius: 6,
+                    borderSkipped: false
                 }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
             },
@@ -497,24 +427,30 @@
         }
     });
 
-    // 4. Goals by week
     new Chart(document.getElementById('goalsChart'), {
         type: 'bar',
         data: {
             labels: weekLabels,
             datasets: [
                 {
-                    label: 'Completadas', data: goalsComp,
-                    backgroundColor: 'rgba(33,227,107,.75)', borderRadius: 6, borderSkipped: false
+                    label: 'Completadas',
+                    data: goalsComp,
+                    backgroundColor: 'rgba(33,227,107,.75)',
+                    borderRadius: 6,
+                    borderSkipped: false
                 },
                 {
-                    label: 'Total', data: goalsTotal,
-                    backgroundColor: 'rgba(255,255,255,.06)', borderRadius: 6, borderSkipped: false
+                    label: 'Total',
+                    data: goalsTotal,
+                    backgroundColor: 'rgba(255,255,255,.06)',
+                    borderRadius: 6,
+                    borderSkipped: false
                 }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: true, labels: { color: '#9aa3b5', boxWidth: 12, borderRadius: 4, useBorderRadius: true } }
             },
@@ -525,7 +461,6 @@
         }
     });
 
-    // 5. Goal rate donut
     const goalRate = parseFloat("{{ stats.goal_completion_rate }}") || 0;
     const donutEl = document.getElementById('goalRateChart');
     if (donutEl) {
@@ -535,11 +470,13 @@
                 datasets: [{
                     data: [goalRate, 100 - goalRate],
                     backgroundColor: [ACCENT, 'rgba(255,255,255,.07)'],
-                    borderWidth: 0, borderRadius: 4,
+                    borderWidth: 0,
+                    borderRadius: 4
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
+                responsive: true,
+                maintainAspectRatio: false,
                 cutout: '72%',
                 plugins: { legend: noLegend, tooltip: { enabled: false } }
             }

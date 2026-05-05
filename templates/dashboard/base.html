@@ -30,6 +30,9 @@
     <script>
         (function () {
             const chipTime = document.getElementById('chip-time');
+            if (!chipTime) {
+                return;
+            }
             function renderClock() {
                 const now = new Date();
                 const opts = { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };

@@ -1,0 +1,11 @@
+from django.db import migrations
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("workouts", "0004_remove_exercise_type_add_description"),
+        ("workouts", "0008_meal_image_meal_image_url"),
+    ]
+
+    operations = []
