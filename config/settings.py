@@ -34,7 +34,7 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [
-    "http://54.197.209.151",
+    "http://13.222.36.24",
     "http://localhost",
     "http://127.0.0.1"
 ]
