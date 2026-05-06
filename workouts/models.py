@@ -55,6 +55,7 @@ class MealCategory(models.Model):
 
 
 class Meal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="meals", null=True, blank=True)
     name = models.CharField(max_length=255)
     calories = models.IntegerField()
     carbs_g = models.IntegerField()
@@ -63,6 +64,11 @@ class Meal(models.Model):
     is_predefined = models.BooleanField(default=False)
     image = models.ImageField(upload_to='meals/', null=True, blank=True)
     image_url = models.URLField(null=True, blank=True)
+    meal_type = models.CharField(
+        max_length=50,
+        default='other',
+        blank=True
+    )
 
     category = models.ForeignKey(
         MealCategory,
@@ -74,6 +80,20 @@ class Meal(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@receiver(post_save, sender=Meal)
+def generate_meal_image_on_create(sender, instance, created, **kwargs):
+    if not created:
+        return
+    if instance.image or instance.image_url or instance.is_predefined:
+        return
+
+    from .meal_image_generation import generate_meal_image
+
+    image_path = generate_meal_image(instance.name)
+    if image_path:
+        Meal.objects.filter(pk=instance.pk).update(image=image_path)
     
 class FavoriteMeal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorite_meals")
