@@ -9,3 +9,5 @@ faker
 python-dotenv>=1.0.0
 requests
 huggingface_hub
+numpy
+openai
