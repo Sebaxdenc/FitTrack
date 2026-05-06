@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from django.conf import settings
+from google import genai
 
 from .exceptions import (
     ExerciseDescriptionConfigurationError,

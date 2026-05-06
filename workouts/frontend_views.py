@@ -47,8 +47,8 @@ from .services import create_exercise, create_routine, delete_exercise, delete_r
 #  Generación de imagen con Gemini Imagen 
 
 def _generate_meal_image_gemini(meal_name: str):
-    load_dotenv("gemini.env")
-    load_dotenv("../gemini.env")
+    load_dotenv(".env")
+    load_dotenv("../.env")
 
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
