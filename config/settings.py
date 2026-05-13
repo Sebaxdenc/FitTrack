@@ -36,7 +36,8 @@ ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [
     "http://13.222.36.24",
     "http://localhost",
-    "http://127.0.0.1"
+    "http://127.0.0.1",
+    "http://fittrack.work.gd/"
 ]
 
 # Application definition
