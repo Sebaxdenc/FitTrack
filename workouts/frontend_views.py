@@ -16,9 +16,11 @@ from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.views import View
-from .models import Meal, FavoriteMeal 
+from django.utils import timezone
+from .models import Meal, FavoriteMeal, DailyLog, MealLog
 from .forms import MealForm
 from openai import OpenAI
 
@@ -35,6 +37,7 @@ from .exceptions import (
 )
 from .forms import LoginForm, RegistrationForm
 from .models import Exercise, FavoriteExercise, MealItem, MealPlan, Routine, RoutineExercise, RoutineSchedule
+from .models import Workout
 from .routine_forms import ExerciseCreateForm, RoutineCreateForm
 from .selectors import (
     get_todays_routine_schedule,
@@ -44,7 +47,169 @@ from .selectors import (
     get_user_weekly_schedule,
     get_user_stats
 )
-from .services import create_exercise, create_routine, delete_exercise, delete_routine
+from django.contrib.messages import get_messages
+from .services import create_exercise, create_routine, delete_exercise, delete_routine, _build_routine_exercise_payload
+
+
+class WorkoutRunView(LoginRequiredMixin, View):
+    template_name = "workout/run.html"
+
+    def get(self, request, routine_id):
+        routine = Routine.objects.filter(id=routine_id, user=request.user).prefetch_related('exercises__exercise').first()
+        if not routine:
+            messages.error(request, "Rutina no encontrada.")
+            return redirect('routine-list')
+
+        exercises = list(routine.exercises.order_by('sort_order'))
+        total = len(exercises)
+        if total == 0:
+            messages.error(request, "La rutina no tiene ejercicios.")
+            return redirect('routine-detail', routine_id=routine_id)
+
+        # session key to track progress
+        sess_key = f'workout_progress_{routine_id}'
+        prog = request.session.get(sess_key, {})
+        if not prog:
+            prog = {'ex_index': 0, 'completed_sets': 0, 'started_at': timezone.now().isoformat()}
+            request.session[sess_key] = prog
+
+        ex_index = prog.get('ex_index', 0)
+        completed_sets = prog.get('completed_sets', 0)
+
+        # clamp
+        if ex_index >= total:
+            ex_index = total - 1
+
+        current_ex = exercises[ex_index]
+
+        context = {
+            'routine': routine,
+            'current_exercise': current_ex,
+            'current_index_plus_one': ex_index + 1,
+            'total_exercises': total,
+            'range_current_sets': range(1, current_ex.target_sets + 1),
+            'completed_sets': completed_sets,
+        }
+        return render(request, self.template_name, context)
+
+
+class WorkoutCompleteSetView(LoginRequiredMixin, View):
+    http_method_names = ['post']
+
+    def post(self, request, routine_id):
+        routine = Routine.objects.filter(id=routine_id, user=request.user).prefetch_related('exercises__exercise').first()
+        if not routine:
+            return JsonResponse({'error': 'Rutina no encontrada.'}, status=404)
+
+        exercises = list(routine.exercises.order_by('sort_order'))
+        if not exercises:
+            return JsonResponse({'error': 'Sin ejercicios'}, status=400)
+
+        sess_key = f'workout_progress_{routine_id}'
+        prog = request.session.get(sess_key, {})
+        if not prog:
+            prog = {'ex_index': 0, 'completed_sets': 0, 'started_at': timezone.now().isoformat()}
+
+        ex_index = prog.get('ex_index', 0)
+        completed_sets = prog.get('completed_sets', 0)
+
+        # current exercise
+        if ex_index >= len(exercises):
+            # already finished
+            request.session.pop(sess_key, None)
+            messages.success(request, 'Rutina completada.')
+            request.session["workout_completed_notice"] = {
+                "routine_name": routine.name,
+                "exercise_count": len(exercises),
+            }
+            return JsonResponse({'finished': True})
+
+        current_ex = exercises[ex_index]
+
+        # increment completed_sets
+        completed_sets += 1
+
+        # update stats: simplistic calories per set
+        per_set_cal = 8
+        today = timezone.localdate()
+        daily_log, _ = DailyLog.objects.get_or_create(user=request.user, log_date=today)
+        daily_log.total_calories_burned = (daily_log.total_calories_burned or 0) + per_set_cal
+        daily_log.save()
+
+        # if reached target sets, advance exercise
+        if completed_sets >= current_ex.target_sets:
+            ex_index += 1
+            completed_sets = 0
+
+        # if finished all exercises, finalize workout record
+        if ex_index >= len(exercises):
+            # create a Workout record
+            started = prog.get('started_at')
+            try:
+                started_dt = timezone.datetime.fromisoformat(started)
+                if started_dt.tzinfo is None:
+                    started_dt = timezone.make_aware(started_dt)
+            except Exception:
+                started_dt = timezone.now()
+
+            duration_minutes = 0
+            Workout.objects.create(user=request.user, routine=routine, started_at=started_dt, duration_minutes=duration_minutes)
+            request.session.pop(sess_key, None)
+            messages.success(request, 'Rutina completada. Buen trabajo!')
+            request.session["workout_completed_notice"] = {
+                "routine_name": routine.name,
+                "exercise_count": len(exercises),
+            }
+            return JsonResponse({'finished': True})
+
+        prog['ex_index'] = ex_index
+        prog['completed_sets'] = completed_sets
+        request.session[sess_key] = prog
+        request.session.modified = True
+
+        return JsonResponse({'ok': True})
+
+
+class WorkoutDaysView(LoginRequiredMixin, View):
+    """Display all 7 days of the week with their scheduled routines."""
+    template_name = "workout/days.html"
+
+    def get(self, request):
+        # Get all routine schedules for the user
+        schedules = RoutineSchedule.objects.filter(user=request.user).select_related('routine')
+        
+        # Build a dict: day_of_week -> list of routines
+        days_data = {}
+        day_names = {
+            0: "Lunes",
+            1: "Martes",
+            2: "Miércoles",
+            3: "Jueves",
+            4: "Viernes",
+            5: "Sábado",
+            6: "Domingo",
+        }
+        
+        # Initialize all 7 days
+        for day_num in range(7):
+            days_data[day_num] = {
+                'name': day_names[day_num],
+                'routines': []
+            }
+        
+        # Populate routines for each day
+        for schedule in schedules:
+            day_num = schedule.day_of_week
+            days_data[day_num]['routines'].append(schedule.routine)
+        
+        # Sort by day number
+        sorted_days = [days_data[i] for i in range(7)]
+        
+        context = {
+            'days': sorted_days,
+            'day_names': day_names,
+        }
+        return render(request, self.template_name, context)
 
 
 #  Generación de imagen con Hugging Face
@@ -339,27 +504,69 @@ class HomeView(LoginRequiredMixin, View):
     template_name = "dashboard/home.html"
 
     def get(self, request):
-        sample_meal = {
-            "title": "Pescado y Verduras",
-            "subtitle": "Ejemplo dinner dependiendo de la hora",
-            "time_range": "7pm - 9pm",
+        today_weekday = timezone.localdate().weekday()
+        weekly_schedule = {
+            schedule.day_of_week: schedule
+            for schedule in get_user_weekly_schedule(request.user).select_related("routine")
         }
-        routine_schedule = get_todays_routine_schedule(request.user)
-        routine = routine_schedule.routine if routine_schedule else None
-        routine_exercises = []
-        if routine:
-            routine_exercises = list(routine.exercises.select_related("exercise").all()[:6])
+
+        # Default exercises not shown in the UI; omit from context
+
+        calendar_days = []
+        for day_index, day_label in RoutineSchedule.DAY_CHOICES:
+            schedule = weekly_schedule.get(day_index)
+            routine = schedule.routine if schedule else None
+            routine_exercises = []
+            if routine:
+                routine_exercises = list(
+                    routine.exercises.select_related("exercise").order_by("sort_order")[:4]
+                )
+
+            # compute the date for this weekday in the current week
+            today = timezone.localdate()
+            days_ahead = (day_index - today_weekday) % 7
+            target_date = today + timezone.timedelta(days=days_ahead)
+
+            # fetch meal logs for this date (if any)
+            daily_log = DailyLog.objects.filter(user=request.user, log_date=target_date).first()
+            meal_logs = []
+            if daily_log:
+                meal_logs = list(daily_log.meals.select_related('meal').order_by('eaten_at'))
+
+            calendar_days.append(
+                {
+                    "index": day_index,
+                    "label": day_label,
+                    "is_today": day_index == today_weekday,
+                    "schedule": schedule,
+                    "routine": routine,
+                    "routine_exercises": routine_exercises,
+                    "exercise_count": len(routine_exercises),
+                    "target_date": target_date,
+                    "meal_logs": meal_logs,
+                }
+            )
+
+        # Deduplicate flashed messages so identical messages don't stack
+        storage = get_messages(request)
+        seen = set()
+        deduped = []
+        for m in storage:
+            text = str(m)
+            if text in seen:
+                continue
+            seen.add(text)
+            deduped.append(m)
 
         return render(
             request,
             self.template_name,
             {
                 "user": request.user,
-                "meal": sample_meal,
-                "routine_schedule": routine_schedule,
-                "routine": routine,
-                "routine_exercises": routine_exercises,
+                "calendar_days": calendar_days,
                 "day_labels": dict(RoutineSchedule.DAY_CHOICES),
+                "dashboard_messages": deduped,
+                "workout_completed_notice": request.session.pop("workout_completed_notice", None),
             },
         )
 
@@ -397,6 +604,10 @@ class ExerciseListView(LoginRequiredMixin, View):
                     equipment_photo=form.cleaned_data["equipment_photo"],
                 )
                 messages.success(request, "Ejercicio creado correctamente.")
+                # If caller provided a return URL, go back there (e.g., routine create flow)
+                next_url = request.POST.get("next") or request.GET.get("next")
+                if next_url:
+                    return redirect(next_url)
                 return redirect("routine-exercise-list")
             except ExerciseError as exc:
                 messages.error(request, str(exc))
@@ -497,7 +708,7 @@ class RoutineCreateView(LoginRequiredMixin, View):
                     goal=form.cleaned_data["goal"],
                     is_public=form.cleaned_data["is_public"],
                     exercise_items=_extract_routine_exercises(request),
-                    scheduled_days=form.cleaned_data["scheduled_days"],
+                    scheduled_days=[],
                 )
                 messages.success(request, "Rutina creada correctamente.")
                 return redirect("routine-list")
@@ -536,6 +747,89 @@ class RoutineDetailView(LoginRequiredMixin, View):
         )
 
 
+class RoutineEditView(LoginRequiredMixin, View):
+    template_name = "routines_edit.html"
+
+    def get(self, request, routine_id):
+        routine = get_user_routine(request.user, routine_id)
+        if not routine:
+            messages.error(request, "La rutina que buscas no existe.")
+            return redirect("routine-list")
+
+        form = RoutineCreateForm(initial={
+            "name": routine.name,
+            "goal": routine.goal,
+            "is_public": "True" if routine.is_public else "False",
+        })
+        
+        exercise_choices = list(get_user_exercises(request.user))
+        
+        # Mark exercises that are in this routine
+        routine_exercise_ids = set(routine.exercises.values_list("exercise_id", flat=True))
+        for exercise in exercise_choices:
+            exercise.in_routine = exercise.id in routine_exercise_ids
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "exercise_choices": exercise_choices,
+                "routine": routine,
+                "routine_id": routine_id,
+            },
+        )
+
+    def post(self, request, routine_id):
+        routine = get_user_routine(request.user, routine_id)
+        if not routine:
+            messages.error(request, "La rutina que buscas no existe.")
+            return redirect("routine-list")
+
+        form = RoutineCreateForm(request.POST)
+        exercise_choices = list(get_user_exercises(request.user))
+
+        if form.is_valid():
+            try:
+                # Update routine basic info
+                routine.name = form.cleaned_data["name"]
+                routine.goal = form.cleaned_data["goal"]
+                routine.is_public = form.cleaned_data["is_public"]
+                routine.save()
+
+                # Clear existing exercises and add new ones
+                RoutineExercise.objects.filter(routine=routine).delete()
+                
+                exercise_items = _extract_routine_exercises(request)
+                routine_exercise_payload = _build_routine_exercise_payload(
+                    user=request.user,
+                    exercise_items=exercise_items,
+                )
+                
+                RoutineExercise.objects.bulk_create([
+                    RoutineExercise(routine=routine, **item)
+                    for item in routine_exercise_payload
+                ])
+
+                messages.success(request, "Rutina actualizada correctamente.")
+                return redirect("routine-detail", routine_id=routine_id)
+            except Exception as exc:
+                messages.error(request, str(exc))
+        else:
+            messages.error(request, "Revisa los datos de la rutina para continuar.")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "exercise_choices": exercise_choices,
+                "routine": routine,
+                "routine_id": routine_id,
+            },
+        )
+
+
 class RoutineDeleteView(LoginRequiredMixin, View):
     def post(self, request, routine_id):
         try:
@@ -544,6 +838,169 @@ class RoutineDeleteView(LoginRequiredMixin, View):
         except (RoutineError, RoutineAccessDeniedError, RoutineNotFoundError) as exc:
             messages.error(request, str(exc))
         return redirect("routine-list")
+
+
+class RoutineSelectForDayView(LoginRequiredMixin, View):
+    template_name = "routine_select_for_day.html"
+
+    def get(self, request, day_index):
+        """Show all user routines to select one for a specific day"""
+        routines = get_user_routines(request.user)
+        current_schedule = RoutineSchedule.objects.filter(
+            user=request.user, day_of_week=day_index
+        ).first()
+        
+        day_labels = dict(RoutineSchedule.DAY_CHOICES)
+        day_label = day_labels.get(day_index, "Desconocido")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "routines": routines,
+                "day_index": day_index,
+                "day_label": day_label,
+                "current_routine": current_schedule.routine if current_schedule else None,
+            },
+        )
+
+    def post(self, request, day_index):
+        """Assign selected routine to the specified day"""
+        routine_id = request.POST.get("routine_id")
+        
+        try:
+            if routine_id:
+                routine = Routine.objects.get(id=routine_id, user=request.user)
+                # Delete existing schedule for this day
+                RoutineSchedule.objects.filter(
+                    user=request.user, day_of_week=day_index
+                ).delete()
+                # Create new schedule
+                RoutineSchedule.objects.create(
+                    user=request.user,
+                    routine=routine,
+                    day_of_week=day_index,
+                )
+                messages.success(request, f"Rutina '{routine.name}' asignada correctamente.")
+            else:
+                # Remove routine from day
+                RoutineSchedule.objects.filter(
+                    user=request.user, day_of_week=day_index
+                ).delete()
+                messages.success(request, "Rutina removida del día.")
+        except Routine.DoesNotExist:
+            messages.error(request, "Rutina no encontrada.")
+        except Exception as exc:
+            messages.error(request, f"Error al asignar rutina: {str(exc)}")
+
+        return redirect("dashboard-home")
+ 
+class MealSelectForDayView(LoginRequiredMixin, View):
+    template_name = "meal_select_for_day.html"
+
+    def get(self, request, day_index):
+        """Show user's meals to add to a specific day"""
+        # Get available meals: user's own plus predefined ones
+        user_meals = list(Meal.objects.filter(user=request.user))
+        predefined_meals = list(Meal.objects.filter(is_predefined=True))
+        meals = user_meals + [m for m in predefined_meals if m not in user_meals]
+
+        # Compute the target date for the selected weekday in the current week
+        today = timezone.localdate()
+        today_weekday = today.weekday()
+        days_ahead = (day_index - today_weekday) % 7
+        target_date = today + timezone.timedelta(days=days_ahead)
+
+        # Get existing meal logs for that date
+        daily_log = DailyLog.objects.filter(user=request.user, log_date=target_date).first()
+        current_meal_logs = []
+        if daily_log:
+            current_meal_logs = list(daily_log.meals.select_related('meal'))
+
+        day_labels = dict(RoutineSchedule.DAY_CHOICES)
+        day_label = day_labels.get(day_index, "Desconocido")
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "meals": meals,
+                "day_index": day_index,
+                "day_label": day_label,
+                "target_date": target_date,
+                "current_meal_logs": current_meal_logs,
+            },
+        )
+
+    def post(self, request, day_index):
+        meal_type = request.POST.get("meal_type") or "other"
+
+        try:
+            # compute target date for the day index
+            today = timezone.localdate()
+            today_weekday = today.weekday()
+            days_ahead = (day_index - today_weekday) % 7
+            target_date = today + timezone.timedelta(days=days_ahead)
+
+            # ensure DailyLog exists
+            daily_log, _ = DailyLog.objects.get_or_create(user=request.user, log_date=target_date)
+
+            # collect selected meals
+            selected = []
+            for key in request.POST:
+                if not key.startswith("selected_meal_"):
+                    continue
+                meal_id = key.rsplit("_", 1)[-1]
+                selected.append(meal_id)
+
+            if not selected:
+                messages.error(request, "No seleccionaste ninguna comida.")
+                return redirect("meal-select-for-day", day_index=day_index)
+
+            for meal_id in selected:
+                meal = Meal.objects.filter(id=meal_id).first()
+                if not meal:
+                    continue
+                qty = request.POST.get(f"quantity_{meal_id}") or 1.0
+                eaten_at = timezone.now()
+                MealLog.objects.create(
+                    user=request.user,
+                    meal=meal,
+                    daily_log=daily_log,
+                    eaten_at=eaten_at,
+                    quantity=float(qty),
+                    meal_type=meal_type,
+                )
+
+            messages.success(request, f"{len(selected)} comida(s) agregada(s) para {target_date}.")
+        except Exception as exc:
+            messages.error(request, f"Error al agregar comida: {str(exc)}")
+
+        # After successfully adding meals for the day, return to the dashboard home
+        return redirect("dashboard-home")
+
+
+class MealLogDeleteView(LoginRequiredMixin, View):
+    def post(self, request, meal_log_id):
+        try:
+            log = MealLog.objects.select_related('daily_log').filter(id=meal_log_id, user=request.user).first()
+            if not log:
+                messages.error(request, "Registro de comida no encontrado.")
+                return redirect('dashboard-home')
+
+            # capture day_index if supplied so we can return to selection page
+            day_index = request.POST.get('day_index')
+            log.delete()
+            messages.success(request, "Registro de comida eliminado.")
+            if day_index is not None:
+                try:
+                    return redirect('meal-select-for-day', day_index=int(day_index))
+                except Exception:
+                    pass
+        except Exception as exc:
+            messages.error(request, f"Error al eliminar: {str(exc)}")
+        return redirect('dashboard-home')
+
 
 class StatsView(LoginRequiredMixin, View):
     template_name = "dashboard/stats.html"
@@ -610,11 +1067,13 @@ class SocialFeedView(View):
 
         routines_qs = Routine.objects.filter(is_public=True).select_related("user").prefetch_related("exercises__exercise").order_by("-created_at")
         meal_plans_qs = MealPlan.objects.filter(is_public=True).select_related("user").prefetch_related("items__meal").order_by("-created_at")
+        meals_qs = Meal.objects.filter(Q(is_predefined=True) | Q(user__isnull=False)).select_related("user", "category").order_by("-id")
         exercises_qs = Exercise.objects.exclude(user__isnull=True).select_related("user").order_by("-id")
 
         if request.user.is_authenticated:
             routines_qs = routines_qs.exclude(user=request.user)
             meal_plans_qs = meal_plans_qs.exclude(user=request.user)
+            meals_qs = meals_qs.exclude(user=request.user)
             exercises_qs = exercises_qs.exclude(user=request.user)
 
         public_routines = list(routines_qs[:20])
@@ -624,8 +1083,11 @@ class SocialFeedView(View):
         if tab == "meals" and search_query:
             ranked_meals, search_mode, search_provider = _semantic_rank_by_title(list(meal_plans_qs[:100]), search_query, "name")
             public_meal_plans = ranked_meals[:20]
+            ranked_public_meals, meal_search_mode, meal_search_provider = _semantic_rank_by_title(list(meals_qs[:100]), search_query, "name")
+            public_meals = ranked_public_meals[:20]
         else:
             public_meal_plans = list(meal_plans_qs[:20])
+            public_meals = list(meals_qs[:20])
 
         if tab == "exercises" and search_query:
             ranked_exercises, search_mode, search_provider = _semantic_rank_by_title(list(exercises_qs[:100]), search_query, "name")
@@ -634,12 +1096,17 @@ class SocialFeedView(View):
             public_exercises = list(exercises_qs[:20])
 
         saved_routine_ids = set()
+        saved_meal_ids = set()
         saved_meal_plan_ids = set()
         saved_exercise_ids = set()
         if request.user.is_authenticated:
             saved_routine_ids = set(
                 Routine.objects.filter(user=request.user, source_routine__isnull=False)
                 .values_list("source_routine_id", flat=True)
+            )
+            saved_meal_ids = set(
+                FavoriteMeal.objects.filter(user=request.user)
+                .values_list("meal_id", flat=True)
             )
             saved_meal_plan_ids = set(
                 MealPlan.objects.filter(user=request.user, source_meal_plan__isnull=False)
@@ -686,6 +1153,7 @@ class SocialFeedView(View):
             {
                 "public_routines": public_routines,
                 "public_meal_plans": public_meal_plans,
+                "public_meals": public_meals,
                 "public_exercises": public_exercises,
                 "is_authenticated": request.user.is_authenticated,
                 "active_tab": tab if tab in {"routines", "meals", "exercises"} else "routines",
@@ -700,6 +1168,7 @@ class SocialFeedView(View):
                 "meal_plan_already_saved": meal_plan_already_saved,
                 "exercise_already_saved": exercise_already_saved,
                 "saved_routine_ids": saved_routine_ids,
+                "saved_meal_ids": saved_meal_ids,
                 "saved_meal_plan_ids": saved_meal_plan_ids,
                 "saved_exercise_ids": saved_exercise_ids,
             },
@@ -707,8 +1176,33 @@ class SocialFeedView(View):
 
     def post(self, request):
         routine_id = request.POST.get("routine_id")
+        meal_id = request.POST.get("meal_id")
         meal_plan_id = request.POST.get("meal_plan_id")
         exercise_id = request.POST.get("exercise_id")
+
+        if meal_id:
+            if not request.user.is_authenticated:
+                messages.error(request, "Debes iniciar sesion para guardar una comida.")
+                return redirect(f"/login/?next=/social/?tab=meals&meal={meal_id}")
+
+            source_meal = Meal.objects.filter(id=meal_id).select_related("user", "category").first()
+            if not source_meal:
+                messages.error(request, "La comida no existe o ya no esta disponible.")
+                return redirect("/social/?tab=meals")
+
+            if source_meal.user_id == request.user.id:
+                messages.info(request, "Esta comida ya es tuya.")
+                return redirect(f"/social/?tab=meals&meal={source_meal.id}")
+
+            favorite_meal, created = FavoriteMeal.objects.get_or_create(
+                user=request.user,
+                meal=source_meal,
+            )
+            if created:
+                messages.success(request, "Comida guardada en tu perfil.")
+            else:
+                messages.info(request, "Esta comida ya esta guardada en tu perfil.")
+            return redirect(f"/social/?tab=meals&meal={source_meal.id}")
 
         if meal_plan_id:
             if not request.user.is_authenticated:
@@ -824,9 +1318,11 @@ class DietView(LoginRequiredMixin, View):
     template_name = "diet.html"
 
     def get(self, request):
-        breakfast = Meal.objects.filter(category__name="Desayuno")
-        lunch = Meal.objects.filter(category__name="Almuerzo")
-        dinner = Meal.objects.filter(category__name="Cena")
+        # Show meals that are either predefined or belong to the current user
+        user_or_predef = Q(is_predefined=True) | Q(user=request.user)
+        breakfast = Meal.objects.filter(category__name="Desayuno").filter(user_or_predef)
+        lunch = Meal.objects.filter(category__name="Almuerzo").filter(user_or_predef)
+        dinner = Meal.objects.filter(category__name="Cena").filter(user_or_predef)
 
         favorite_relations = FavoriteMeal.objects.filter(user=request.user)
         favorite_meals = [fav.meal for fav in favorite_relations]

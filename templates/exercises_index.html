@@ -34,6 +34,7 @@
     .btn-ai { display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,.04); color:#f5f7fb; border:1px solid rgba(255,255,255,.1); }
     .btn-ai:hover { border-color:rgba(33,227,107,.45); }
     .btn-ai[disabled] { opacity:.6; cursor:wait; }
+    .btn-primary[disabled] { opacity:.7; cursor:wait; }
     .field-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:6px; }
     .field-head label { margin-bottom:0; }
     .field-help,.field-error { font-size:12px; margin-top:6px; }
@@ -52,6 +53,7 @@
 </head>
 <body>
   <main class="shell">
+    {% url 'routine-list' as routine_list_url %}
     <section class="topbar">
       <div>
         <div class="brand"><span>FIT</span>track</div>
@@ -59,7 +61,7 @@
       </div>
       <nav class="nav-links">
         <a href="{% url 'dashboard-home' %}">Inicio</a>
-        <a class="active" href="{% url 'routine-list' %}">Rutinas</a>
+        <a class="active" href="{{ request.GET.next|default:routine_list_url }}">Rutinas</a>
       </nav>
     </section>
     {% if messages %}
@@ -75,6 +77,9 @@
         <p class="muted">Despues podras usarlo dentro de tus rutinas. Puedes pegar una URL o subir una foto del equipo.</p>
         <form method="post" enctype="multipart/form-data" novalidate>
           {% csrf_token %}
+          {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+          {% endif %}
           <div><label for="{{ exercise_form.name.id_for_label }}">Nombre</label>{{ exercise_form.name }}</div>
           <div><label for="{{ exercise_form.muscle_group.id_for_label }}">Grupo muscular</label>{{ exercise_form.muscle_group }}</div>
           <div>
@@ -98,16 +103,19 @@
           </div>
           <div><label for="{{ exercise_form.image_url.id_for_label }}">Foto URL opcional</label>{{ exercise_form.image_url }}</div>
           <div><label for="{{ exercise_form.equipment_photo.id_for_label }}">Foto del equipo</label>{{ exercise_form.equipment_photo }}</div>
-          <button class="btn btn-primary" type="submit">Guardar ejercicio</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-primary" id="save-exercise-btn" type="submit">Guardar ejercicio</button>
+            <a class="btn btn-secondary" href="{{ request.GET.next|default:routine_list_url }}" style="text-decoration:none;padding:10px 12px;">Cancelar</a>
+          </div>
         </form>
       </article>
       <article class="card">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:14px;">
           <div>
             <h2>Tus ejercicios</h2>
             <p class="muted">Todos pertenecen al modulo de rutinas.</p>
           </div>
-          <a href="{% url 'routine-list' %}" style="color:#21e36b;font-weight:800;text-decoration:none;">Volver a rutinas</a>
+          <a href="{{ request.GET.next|default:routine_list_url }}" style="color:#21e36b;font-weight:800;text-decoration:none;">Volver a rutinas</a>
         </div>
         {% if exercises %}
           <div class="grid">
@@ -140,6 +148,8 @@
   <script>
     (() => {
       const button = document.getElementById("generate-description-btn");
+      const form = document.querySelector("article.card form[method='post']");
+      const saveButton = document.getElementById("save-exercise-btn");
       if (!button) {
         return;
       }
@@ -150,11 +160,32 @@
       const csrfField = document.querySelector("input[name='csrfmiddlewaretoken']");
       const errorBox = document.getElementById("description-ai-error");
       const defaultButtonHtml = button.innerHTML;
+      const defaultSaveButtonText = saveButton?.textContent || "Guardar ejercicio";
 
       const setLoadingState = (isLoading) => {
         button.disabled = isLoading;
         button.innerHTML = isLoading ? "<span>Generando...</span>" : defaultButtonHtml;
       };
+
+      const setSubmitState = (isSubmitting) => {
+        if (!saveButton) {
+          return;
+        }
+
+        saveButton.disabled = isSubmitting;
+        saveButton.textContent = isSubmitting ? "Guardando..." : defaultSaveButtonText;
+      };
+
+      if (form && saveButton) {
+        form.addEventListener("submit", () => {
+          if (form.dataset.submitting === "true") {
+            return;
+          }
+
+          form.dataset.submitting = "true";
+          setSubmitState(true);
+        });
+      }
 
       button.addEventListener("click", async () => {
         const payload = {
