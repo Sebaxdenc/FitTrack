@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FITtrack | Nueva rutina</title>
+  <title>FITtrack | Editar rutina</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
@@ -24,10 +24,7 @@
     select { width:100%; background:#0f141c; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 14px; color:#f5f7fb; transition:all 0.2s ease; cursor:pointer; }
     select:hover { border-color:rgba(33,227,107,.4); box-shadow:0 0 12px rgba(33,227,107,.08); }
     select:focus { outline:none; border-color:rgba(33,227,107,.6); box-shadow:0 0 16px rgba(33,227,107,.15); }
-    .btn { border:none; border-radius:14px; cursor:pointer; padding:12px 16px; font-weight:800; background:linear-gradient(120deg, #21e36b, #00c4ff); color:#0c1016; transition:all 0.2s ease; box-shadow:0 4px 12px rgba(33,227,107,.15); }
-    .btn:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(33,227,107,.3); }
-    .btn:active { transform:translateY(-1px); }
-    .btn-add { background:linear-gradient(120deg, #21e36b, #1bc863); border:none; padding:14px 16px; }
+    .btn { border:none; border-radius:14px; cursor:pointer; padding:12px 16px; font-weight:800; background:linear-gradient(120deg, #21e36b, #00c4ff); color:#0c1016; }
     .btn-secondary { background:#0f141c; color:#f5f7fb; border:1px solid rgba(255,255,255,.1); }
     .exercise-grid { grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
     .exercise-card { background:#101722; border:1px solid rgba(255,255,255,.06); border-radius:18px; overflow:hidden; }
@@ -37,8 +34,6 @@
     .split { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
     .messages { margin-bottom:14px; display:grid; gap:8px; }
     .message { padding:10px 12px; border-radius:12px; font-size:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
-    .days { display:grid; gap:8px; }
-    .days label { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); color:#f5f7fb; margin-bottom:0; }
     .empty-state { padding:20px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); color:var(--muted); background:rgba(255,255,255,.02); }
     .bottom-nav {
       position: fixed;
@@ -75,6 +70,7 @@
       fill: none;
       stroke-width: 1.8;
     }
+    .button-group { display:flex; gap:12px; }
     @media (max-width:900px) { .layout { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -83,7 +79,7 @@
     <section class="topbar">
       <div>
         <div class="brand"><span>FIT</span>track</div>
-        <div class="muted">Une ejercicios, define repeticiones y asigna dias de la semana.</div>
+        <div class="muted">Edita el nombre, objetivo, visibilidad y ejercicios de la rutina.</div>
       </div>
       <a href="{% url 'routine-list' %}" style="color:#f5f7fb;text-decoration:none;">Volver a rutinas</a>
     </section>
@@ -101,12 +97,14 @@
         <div><label for="{{ form.name.id_for_label }}">Nombre</label>{{ form.name }}</div>
         <div><label for="{{ form.goal.id_for_label }}">Objetivo</label>{{ form.goal }}</div>
         <div><label for="{{ form.is_public.id_for_label }}">Visibilidad</label>{{ form.is_public }}</div>
-        <button class="btn" type="submit" style="margin-top: 20px; width: 100%; font-size: 16px; padding: 14px 16px; letter-spacing: 0.5px;">✓ Guardar rutina</button>
+        <div class="button-group">
+          <button class="btn" type="submit">Guardar cambios</button>
+          <a href="{% url 'routine-detail' routine_id %}" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Cancelar</a>
+        </div>
       </aside>
       <section class="card">
         <h2>Selecciona ejercicios</h2>
         <p class="muted">Marca los ejercicios que entran en la rutina y define orden, series, repeticiones y descanso.</p>
-        <a href="{% url 'exercise-list' %}?next={{ request.path }}" class="btn btn-add" style="display: block; text-align: center; text-decoration: none; margin-bottom: 16px;">+ Agregar ejercicio</a>
         {% if exercise_choices %}
           <div class="exercise-grid">
             {% for exercise in exercise_choices %}
@@ -117,7 +115,7 @@
                   <div class="placeholder"></div>
                 {% endif %}
                 <div class="exercise-body">
-                  <label class="checkline"><input type="checkbox" name="selected_exercise_{{ exercise.id }}"><span>{{ exercise.name }}</span></label>
+                  <label class="checkline"><input type="checkbox" name="selected_exercise_{{ exercise.id }}" {% if exercise.in_routine %}checked{% endif %}><span>{{ exercise.name }}</span></label>
                   <div class="muted">{{ exercise.muscle_group }}</div>
                   <div class="muted">{{ exercise.description|truncatechars:90 }}</div>
                   <div class="split">
@@ -133,13 +131,7 @@
             {% endfor %}
           </div>
         {% else %}
-          <div class="empty-state" style="display: grid; gap: 14px; align-items: center;">
-            <div>
-              <strong>No tienes ejercicios creados</strong>
-              <p class="muted" style="margin: 8px 0 0;">Crea al menos un ejercicio para poder armar una rutina.</p>
-            </div>
-            <a href="{% url 'exercise-list' %}?next={{ request.path }}" class="btn" style="text-decoration: none; text-align: center; padding: 14px 16px;">+ Crear ejercicio</a>
-          </div>
+          <div class="empty-state">Necesitas crear ejercicios primero. Ve a la seccion de ejercicios y luego vuelve para armar la rutina.</div>
         {% endif %}
       </section>
     </form>

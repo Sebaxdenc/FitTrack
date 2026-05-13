@@ -2,6 +2,427 @@
 
 {% block title %}Home{% endblock %}
 
+{% block extra_css %}
+<style>
+  body {
+    display: block;
+    padding: 24px 0 120px;
+  }
+
+  .app-shell {
+    width: min(1380px, calc(100% - 48px));
+    margin: 0 auto;
+  }
+
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .logo {
+    font-weight: 800;
+    font-size: 30px;
+  }
+
+  .logo span {
+    color: #21e36b;
+  }
+
+  .chip-time {
+    margin-left: auto;
+    background: #f5f7fb;
+    color: #0c1016;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .messages {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .message {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dashboard-grid {
+    display: block;
+    gap: 18px;
+  }
+
+  .panel {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 18px 20px 14px;
+    background: linear-gradient(135deg, rgba(33, 227, 107, 0.08), rgba(0, 196, 255, 0.05));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .panel-header h2,
+  .panel-header h3,
+  .panel-header p {
+    margin: 0;
+  }
+
+  .panel-body {
+    padding: 12px 14px 16px;
+  }
+
+  .muted {
+    color: #9aa3b5;
+    font-size: 14px;
+  }
+
+  .hero-cta {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .cta-link,
+  .cta-button {
+    min-height: 46px;
+    padding: 0 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .cta-link.primary,
+  .cta-button.primary {
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    color: #0c1016;
+    border: none;
+  }
+
+  .cta-link.secondary,
+  .cta-button.secondary {
+    background: #0f141c;
+    color: #f5f7fb;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .day-slot {
+    min-height: auto;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15, 20, 28, 0.95), rgba(10, 14, 20, 0.98));
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, max-height 0.3s ease;
+  }
+
+  .day-slot:hover {
+    transform: translateY(-2px);
+    border-color: rgba(33, 227, 107, 0.5);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
+  }
+
+  .day-slot.is-today {
+    outline: 2px solid rgba(33, 227, 107, 0.55);
+  }
+
+  .day-slot.collapsed {
+    max-height: 80px;
+    overflow: hidden;
+  }
+
+  .day-slot.expanded {
+    max-height: 600px;
+  }
+
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
+  }
+
+  .day-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .day-chevron {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+  }
+
+  .day-slot.expanded .day-chevron {
+    transform: rotate(180deg);
+  }
+
+  .day-content {
+    margin-top: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .day-slot.expanded .day-content {
+    opacity: 1;
+  }
+
+  .day-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #9aa3b5;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .day-status.active {
+    color: #0c1016;
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    font-weight: 800;
+  }
+
+  .routine-name {
+    font-size: 17px;
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+
+  .routine-meta {
+    margin: 0 0 14px;
+    color: #9aa3b5;
+    font-size: 13px;
+    min-height: 34px;
+  }
+
+  .routine-preview,
+  .default-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .exercise-card,
+  .mini-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  .exercise-card strong,
+  .mini-card strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .exercise-card span,
+  .mini-card span {
+    color: #9aa3b5;
+    font-size: 13px;
+  }
+
+  .day-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .day-actions .cta-link {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .sidebar-stack {
+    display: none;
+  }
+
+  .default-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(33, 227, 107, 0.12);
+    color: #21e36b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .default-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .slot-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 8, 12, 0.72);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 18px;
+  }
+
+  .slot-modal.is-open {
+    display: flex;
+  }
+
+  .slot-modal-card {
+    width: min(560px, 96%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15, 20, 28, 0.98), rgba(10, 14, 20, 0.98));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    max-height: 86vh;
+    overflow: auto;
+  }
+
+  .slot-modal-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 20px 0;
+    align-items: flex-start;
+  }
+
+  .slot-modal-close {
+    border: 0;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f7fb;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .slot-modal-body {
+    padding: 16px 20px 20px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .slot-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .completion-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 8, 12, 0.72);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+    padding: 18px;
+  }
+
+  .completion-modal.is-open {
+    display: flex;
+  }
+
+  .completion-modal-card {
+    width: min(520px, 96%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15, 20, 28, 0.98), rgba(10, 14, 20, 0.98));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    padding: 22px;
+    text-align: center;
+  }
+
+  .completion-badge {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 14px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    color: #0c1016;
+    font-size: 34px;
+    font-weight: 900;
+  }
+
+  .completion-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .completion-actions a,
+  .completion-actions button {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 14px;
+    border: 0;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .completion-actions .primary {
+    background: linear-gradient(120deg, #21e36b, #00c4ff);
+    color: #0c1016;
+  }
+
+  .completion-actions .secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f7fb;
+  }
+
+  @media (max-width: 1180px) {
+    .calendar-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .slot-modal-card {
+      width: calc(100% - 32px);
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <header class="hero">
@@ -9,76 +430,163 @@
   <div class="chip-time" id="chip-time">--</div>
 </header>
 
-{% if messages %}
+{% if dashboard_messages %}
 <div class="messages">
-  {% for message in messages %}
+  {% for message in dashboard_messages %}
   <div class="message {{ message.tags }}">{{ message }}</div>
   {% endfor %}
+  </div>
+{% else %}
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="message {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endif %}
+
+{% if workout_completed_notice %}
+<div class="completion-modal is-open" id="completion-modal" role="dialog" aria-modal="true" aria-labelledby="completion-title">
+  <div class="completion-modal-card">
+    <div class="completion-badge">✓</div>
+    <h2 id="completion-title" style="margin:0 0 8px; font-size: 24px;">¡Rutina completada!</h2>
+    <p style="margin:0; color:#9aa3b5; font-size:14px;">
+      Terminaste <strong style="color:#f5f7fb;">{{ workout_completed_notice.routine_name }}</strong>
+      con {{ workout_completed_notice.exercise_count }} ejercicio{{ workout_completed_notice.exercise_count|pluralize }}.
+    </p>
+    <div class="completion-actions">
+      <a href="{% url 'workout-days-es' %}" class="secondary">Ver entrenar</a>
+      <button type="button" class="primary" id="close-completion-modal">Seguir en inicio</button>
+    </div>
+  </div>
 </div>
 {% endif %}
 
-<section class="section-card">
-  <div class="section-header">
-    <h3>Dinner</h3>
-    <span class="muted">{{ meal.time_range }}</span>
-  </div>
-  <div class="section-body">
-    <div class="hero-image">
-      <div>
-        <h4>{{ meal.title }}</h4>
-        <p>{{ meal.subtitle }}</p>
+<div class="dashboard-grid">
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Calendario semanal</h2>
+      <p class="muted">Cada día se puede abrir para agregar ejercicios y comidas.</p>
+    </div>
+
+    <div class="panel-body">
+      <div class="calendar-grid">
+        {% for day in calendar_days %}
+        <div
+          class="day-slot {% if day.is_today %}is-today{% endif %} collapsed"
+          role="button"
+          tabindex="0"
+          data-day-label="{{ day.label }}"
+          data-day-index="{{ day.index }}"
+          data-routine-name="{% if day.routine %}{{ day.routine.name|escapejs }}{% endif %}"
+          data-routine-goal="{% if day.routine and day.routine.goal %}{{ day.routine.goal|escapejs }}{% endif %}"
+          data-routine-id="{% if day.routine %}{{ day.routine.id }}{% endif %}"
+          data-routine-url="{% if day.routine %}{% url 'routine-detail' day.routine.id %}{% endif %}"
+        >
+          <div class="day-head">
+            <div>
+              <h3 class="day-title">{{ day.label }}</h3>
+            </div>
+            <svg class="day-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+
+          <div class="day-content">
+            <div class="day-status {% if day.routine %}active{% endif %}" style="margin-bottom: 12px;">
+              {% if day.routine %}Rutina asignada{% else %}Libre{% endif %}
+            </div>
+
+            {% if day.routine %}
+            <p class="routine-name">{{ day.routine.name }}</p>
+            <p class="routine-meta">{{ day.routine.goal|default:"Rutina lista para entrenar" }}</p>
+            <div class="routine-preview">
+              {% for routine_exercise in day.routine_exercises %}
+              <div class="exercise-card">
+                <strong>{{ routine_exercise.exercise.name }}</strong>
+                <span>{{ routine_exercise.target_sets }}x{{ routine_exercise.target_reps }} · Descanso {{ routine_exercise.rest_seconds }}s</span>
+              </div>
+              {% empty %}
+              <div class="exercise-card">
+                <strong>Rutina vacía</strong>
+                <span>No hay ejercicios en esta rutina.</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="routine-name">Sin rutina asignada</p>
+            <p class="routine-meta">Haz clic para agregar ejercicios y comidas a este espacio.</p>
+            {% endif %}
+            
+            {% if day.meal_logs %}
+            <div style="margin-top:12px;">
+              <h4 style="margin:0 0 8px;font-size:14px;color:#9aa3b5">Comidas del día</h4>
+              <div class="default-grid">
+                {% for mlog in day.meal_logs %}
+                <div class="mini-card">
+                  <strong>{{ mlog.meal.name }}</strong>
+                  <span>{{ mlog.quantity }} · {{ mlog.meal_type|default:"-" }} · {{ mlog.eaten_at|time:"H:i" }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="day-actions" aria-hidden="true">
+              <a class="cta-link primary" href="{% url 'routine-select-for-day' day.index %}">Ver/Cambiar rutina</a>
+              <a class="cta-link secondary" href="{% url 'meal-select-for-day' day.index %}">Agregar comida</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
     </div>
-    <div class="tagline">"{{ meal.subtitle }}"</div>
-  </div>
-</section>
+  </section>
 
-<section class="section-card">
-  <div class="section-header">
-    {% if routine %}
-    <div>
-      <h3>{{ routine.name|upper }}</h3>
-      {% with routine.goal|default:"Rutina asignada para hoy" as goal_text %}
-      <div class="muted">
-        {{ routine_schedule.get_day_of_week_display }} | {{ goal_text }}
-      </div>
-      {% endwith %}
+  <!-- Sidebar removed: default exercises are not shown in the UI -->
+</div>
 
-    </div>
-    {% else %}
-    <div>
-      <h3>SIN RUTINA HOY</h3>
-      <div class="muted">Asigna una rutina desde la seccion de rutinas.</div>
-    </div>
-    {% endif %}
-  </div>
-  <div class="section-body">
-    <div class="quick-links">
-      <a class="quick-link" href="{% url 'routine-list' %}">Ver rutinas</a>
-      <a class="quick-link primary" href="{% url 'routine-create' %}">Nueva rutina</a>
-    </div>
-    {% if routine %}
-    <div class="grid-3">
-      {% for routine_exercise in routine_exercises %}
-      <div class="tile">
-        <strong>{{ routine_exercise.exercise.name }}</strong>
-        <span>{{ routine_exercise.target_sets }} series x {{ routine_exercise.target_reps }} reps</span>
-        <span>Descanso {{ routine_exercise.rest_seconds }}s</span>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="cta-row">
-      <span>{{ routine_exercises|length }} ejercicios para hoy</span>
-      <a href="{% url 'routine-detail' routine.id %}">Ver detalles</a>
-    </div>
-    {% else %}
-    <div class="empty-state">Crea una rutina y asignala a un dia de la semana para verla aqui.</div>
-    <div class="cta-row">
-      <span>Tu agenda semanal vive en FITtrack</span>
-      <a href="{% url 'routine-create' %}">Crear rutina</a>
-    </div>
-    {% endif %}
-  </div>
-</section>
+<!-- Modal removed: days now collapse/expand inline -->
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const daySlots = document.querySelectorAll('.day-slot');
+
+    daySlots.forEach((slot) => {
+      slot.addEventListener('click', () => {
+
+  (function () {
+    const modal = document.getElementById('completion-modal');
+    const closeBtn = document.getElementById('close-completion-modal');
+    if (!modal || !closeBtn) {
+      return;
+    }
+
+    closeBtn.addEventListener('click', () => {
+      modal.classList.remove('is-open');
+    });
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        modal.classList.remove('is-open');
+      }
+    });
+  })();
+        slot.classList.toggle('collapsed');
+        slot.classList.toggle('expanded');
+      });
+      slot.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          slot.classList.toggle('collapsed');
+          slot.classList.toggle('expanded');
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}

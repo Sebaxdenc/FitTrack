@@ -86,6 +86,12 @@ class Meal(models.Model):
 def generate_meal_image_on_create(sender, instance, created, **kwargs):
     if not created:
         return
+    # If a meal was created without an associated user, treat it as predefined
+    if instance.user is None and not instance.is_predefined:
+        Meal.objects.filter(pk=instance.pk).update(is_predefined=True)
+        # reload the instance flag to avoid generating images for predefined meals
+        instance.is_predefined = True
+
     if instance.image or instance.image_url or instance.is_predefined:
         return
 

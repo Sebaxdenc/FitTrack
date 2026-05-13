@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Seleccionar comida</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0c1016;--muted:#9aa3b5;--accent:#21e36b}
+    body{font-family:Manrope,system-ui;background:var(--bg);color:#f5f7fb;margin:0;padding:28px}
+    .shell{width:min(900px,100%);margin:0 auto}
+    .card{background:rgba(255,255,255,0.03);padding:18px;border-radius:16px;border:1px solid rgba(255,255,255,0.06)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .btn{background:linear-gradient(120deg,#21e36b,#1bc863);color:#05201a;border:none;padding:12px 14px;border-radius:12px;font-weight:800;cursor:pointer}
+    .btn.secondary{background:#0f141c;color:#f5f7fb;border:1px solid rgba(255,255,255,.08)}
+    .meal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .meal-card{background:#0f141c;border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,.04);cursor:pointer;position:relative;overflow:hidden}
+    .meal-card img{width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block}
+    .meal-placeholder{width:100%;height:120px;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0b1220,#071219);color:var(--muted);font-weight:800;font-size:32px}
+    .meal-card .meal-checkbox{width:18px;height:18px}
+    .muted{color:var(--muted)}
+    .button-row{display:flex;gap:8px;margin-top:16px}
+    .meal-card input[type=checkbox]{transform:scale(1.2)}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div>
+        <h1>Agregar comida para {{ day_label }}</h1>
+        <div class="muted">Fecha: {{ target_date }}</div>
+      </div>
+      <div>
+        <a href="{% url 'diet' %}" class="btn secondary" style="text-decoration:none;padding:10px 12px">+ Crear comida</a>
+      </div>
+    </div>
+
+    <form method="post" class="card">
+      {% csrf_token %}
+      <div class="muted">Selecciona las comidas que quieras añadir a este día. Pulsa la tarjeta para seleccionar.</div>
+
+      {% if meals %}
+        <div class="meal-grid">
+          {% for meal in meals %}
+            <label class="meal-card" for="selected_meal_{{ meal.id }}">
+              </div>
+
+              <!-- actions for adding meals (inside the main form) -->
+              <div class="button-row">
+                <button type="submit" class="btn">Agregar comida</button>
+                <a href="{% url 'dashboard-home' %}" class="btn secondary" style="text-decoration:none;padding:10px 12px">Cancelar</a>
+              </div>
+            </form>
+
+            {% if current_meal_logs %}
+              <hr style="border-color:rgba(255,255,255,.04);margin:18px 0">
+              <h3>Comidas ya agregadas para este día</h3>
+              <div style="display:grid;gap:10px;margin-top:8px">
+                {% for log in current_meal_logs %}
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)">
+                    <div>
+                      <strong>{{ log.meal.name }}</strong>
+                      <div class="muted">Cantidad: {{ log.quantity }} · Tipo: {{ log.meal_type }}</div>
+                      <div class="muted">Registrado: {{ log.eaten_at }}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <form method="post" action="{% url 'meal-log-delete' log.id %}">{% csrf_token %}
+                        <input type="hidden" name="day_index" value="{{ day_index }}">
+                        <button class="btn secondary" type="submit" style="padding:8px 10px">Eliminar</button>
+                      </form>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Removed global Cantidad / Tipo inputs for clarity. Quantity remains editable per-card. -->
+
+      <div class="button-row">
+        <button type="submit" class="btn">Agregar comida</button>
+        <a href="{% url 'dashboard-home' %}" class="btn secondary" style="text-decoration:none;padding:10px 12px">Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    function selectMeal(element, mealId){
+      document.querySelectorAll('.meal-card').forEach(c=>c.style.border='1px solid rgba(255,255,255,.04)');
+      element.style.border='2px solid #21e36b';
+      document.getElementById('meal_id_input').value = mealId;
+    }
+  </script>
+</body>
+</html>

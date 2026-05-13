@@ -39,13 +39,11 @@ class ExerciseCreateForm(forms.Form):
 class RoutineCreateForm(forms.Form):
     name = forms.CharField(label="Nombre de la rutina", max_length=255)
     goal = forms.CharField(label="Objetivo", max_length=255, required=False)
-    is_public = forms.BooleanField(label="Rutina publica", required=False)
-    scheduled_days = forms.MultipleChoiceField(
-        label="Dias asignados",
-        required=False,
-        choices=RoutineSchedule.DAY_CHOICES,
-        widget=forms.CheckboxSelectMultiple,
+    VISIBILITY_CHOICES = (
+        ("True", "Público"),
+        ("False", "Privado"),
     )
+    is_public = forms.ChoiceField(label="Visibilidad", choices=VISIBILITY_CHOICES, required=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,3 +60,7 @@ class RoutineCreateForm(forms.Form):
                     "placeholder": field.label,
                 }
             )
+
+    def clean_is_public(self):
+        val = self.cleaned_data.get("is_public")
+        return True if val == "True" else False

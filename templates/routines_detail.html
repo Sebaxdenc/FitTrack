@@ -33,7 +33,7 @@
     }
     .nav-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 4px;
       text-align: center;
     }
@@ -71,7 +71,10 @@
           <span class="muted">No hay dias asignados para esta rutina.</span>
         {% endfor %}
       </div>
-      <p><a href="{% url 'routine-list' %}" style="color:#21e36b;text-decoration:none;">Volver a rutinas</a></p>
+      <p style="display:flex;gap:12px;margin-top:16px;">
+        <a href="{% url 'routine-edit' routine.id %}" style="color:#21e36b;text-decoration:none;padding:8px 12px;border-radius:10px;background:rgba(33,227,107,.1);border:1px solid rgba(33,227,107,.2);">✏️ Editar</a>
+        <a href="{% url 'routine-list' %}" style="color:#21e36b;text-decoration:none;">Volver a rutinas</a>
+      </p>
     </section>
     <section class="card">
       <h2>Ejercicios de la rutina</h2>
