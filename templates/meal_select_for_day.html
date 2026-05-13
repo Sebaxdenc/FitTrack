@@ -45,43 +45,52 @@
         <div class="meal-grid">
           {% for meal in meals %}
             <label class="meal-card" for="selected_meal_{{ meal.id }}">
-              </div>
+              {% if meal.image %}
+                <img src="{{ meal.image.url }}" alt="{{ meal.name }}">
+              {% elif meal.image_url %}
+                <img src="{{ meal.image_url }}" alt="{{ meal.name }}">
+              {% else %}
+                <div class="meal-placeholder">{{ meal.name|slice:":1" }}</div>
+              {% endif %}
 
-              <!-- actions for adding meals (inside the main form) -->
-              <div class="button-row">
-                <button type="submit" class="btn">Agregar comida</button>
-                <a href="{% url 'dashboard-home' %}" class="btn secondary" style="text-decoration:none;padding:10px 12px">Cancelar</a>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div>
+                  <strong>{{ meal.name }}</strong>
+                  <div class="muted">{{ meal.calories }} kcal · {{ meal.protein_g }}g protein</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                  <input type="checkbox" id="selected_meal_{{ meal.id }}" name="selected_meal_{{ meal.id }}" class="meal-checkbox">
+                  <input type="number" name="quantity_{{ meal.id }}" min="0.1" step="0.1" value="1" style="width:70px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:inherit">
+                </div>
               </div>
-            </form>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="muted" style="margin-top:12px">No hay comidas disponibles. Pulsa <a href="{% url 'diet' %}">+ Crear comida</a> para añadir una.</div>
+      {% endif %}
 
-            {% if current_meal_logs %}
-              <hr style="border-color:rgba(255,255,255,.04);margin:18px 0">
-              <h3>Comidas ya agregadas para este día</h3>
-              <div style="display:grid;gap:10px;margin-top:8px">
-                {% for log in current_meal_logs %}
-                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)">
-                    <div>
-                      <strong>{{ log.meal.name }}</strong>
-                      <div class="muted">Cantidad: {{ log.quantity }} · Tipo: {{ log.meal_type }}</div>
-                      <div class="muted">Registrado: {{ log.eaten_at }}</div>
-                    </div>
-                    <div style="display:flex;gap:8px;align-items:center">
-                      <form method="post" action="{% url 'meal-log-delete' log.id %}">{% csrf_token %}
-                        <input type="hidden" name="day_index" value="{{ day_index }}">
-                        <button class="btn secondary" type="submit" style="padding:8px 10px">Eliminar</button>
-                      </form>
-                    </div>
-                  </div>
-                {% endfor %}
+      {% if current_meal_logs %}
+        <hr style="border-color:rgba(255,255,255,.04);margin:18px 0">
+        <h3>Comidas ya agregadas para este día</h3>
+        <div style="display:grid;gap:10px;margin-top:8px">
+          {% for log in current_meal_logs %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)">
+              <div>
+                <strong>{{ log.meal.name }}</strong>
+                <div class="muted">Cantidad: {{ log.quantity }} · Tipo: {{ log.meal_type }}</div>
+                <div class="muted">Registrado: {{ log.eaten_at }}</div>
               </div>
-            {% endif %}
+              <div style="display:flex;gap:8px;align-items:center">
+                <form method="post" action="{% url 'meal-log-delete' log.id %}">{% csrf_token %}
+                  <input type="hidden" name="day_index" value="{{ day_index }}">
+                  <button class="btn secondary" type="submit" style="padding:8px 10px">Eliminar</button>
+                </form>
               </div>
             </div>
           {% endfor %}
         </div>
       {% endif %}
-
-      <!-- Removed global Cantidad / Tipo inputs for clarity. Quantity remains editable per-card. -->
 
       <div class="button-row">
         <button type="submit" class="btn">Agregar comida</button>
