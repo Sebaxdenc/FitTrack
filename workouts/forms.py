@@ -98,8 +98,18 @@ class MealForm(forms.ModelForm):
             'fat_g',
             'category',
             'image',
-            'image_url'
+            'image_url',
         ]
+        labels = {
+            'name': 'Nombre de la comida',
+            'calories': 'Calorías',
+            'protein_g': 'Proteína (g)',
+            'carbs_g': 'Carbohidratos (g)',
+            'fat_g': 'Grasas (g)',
+            'category': 'Categoría (Desayuno, Almuerzo, Cena)',
+            'image': 'Imagen',
+            'image_url': 'URL de imagen',
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -109,5 +119,5 @@ class MealForm(forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs.update({
                 "class": "input-control",
-                "placeholder": field.label,
+                "placeholder": field.label if name not in ['category'] else 'Selecciona una categoría',
             })

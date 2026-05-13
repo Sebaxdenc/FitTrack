@@ -40,8 +40,8 @@
 
   .social-card,
   .detail-card {
-    background: #0f141c;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 12px;
   }
@@ -54,6 +54,10 @@
     gap: 12px;
     align-items: center;
     position: relative;
+  }
+
+  .social-card.clickable {
+    cursor: pointer;
   }
 
   .sim-badge {
@@ -76,6 +80,14 @@
     display: grid;
     place-items: center;
     font-size: 28px;
+    overflow: hidden;
+  }
+
+  .social-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .social-meta {
@@ -95,7 +107,31 @@
 
   .detail-title {
     margin: 0 0 4px 0;
-    font-size: 18px;
+    font-size: 19px;
+  }
+
+  .detail-hero {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .detail-thumb {
+    width: 92px;
+    height: 92px;
+    border-radius: 14px;
+    background: linear-gradient(120deg, rgba(33, 227, 107, .16), rgba(0, 196, 255, .12));
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    font-size: 30px;
+  }
+
+  .detail-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .exercise-list {
@@ -113,6 +149,24 @@
     gap: 8px;
     color: var(--muted);
     font-size: 13px;
+  }
+
+  .detail-metrics {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .metric-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f5f7fb;
+    font-size: 12px;
+    font-weight: 700;
   }
 
   .save-form {
@@ -299,11 +353,43 @@
 {% elif active_tab == 'meals' %}
 <section class="section-card">
   <div class="section-header">
-    <h3>Planes de comida de la comunidad</h3>
-    <div class="muted">Toca un plan para desplegar detalle sin recargar.</div>
+    <h3>Comidas y planes de la comunidad</h3>
+    <div class="muted">Explora comidas publicas de otros usuarios y sus planes.</div>
   </div>
   <div class="section-body">
+    {% if public_meals %}
+    <div class="social-list" style="margin-bottom:16px;">
+      {% for meal in public_meals %}
+      <a class="social-card js-open-detail clickable" href="#" data-detail-id="public-meal-{{ meal.id }}" style="grid-template-columns:88px 1fr;">
+        <div class="social-thumb">
+          {% if meal.image %}
+          <img src="{{ meal.image.url }}" alt="{{ meal.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+          {% elif meal.image_url %}
+          <img src="{{ meal.image_url }}" alt="{{ meal.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+          {% else %}
+          🍽️
+          {% endif %}
+        </div>
+        <div>
+          <strong>{{ meal.name }}</strong>
+          <div class="social-author">por {{ meal.user.username|default:"FITtrack" }}</div>
+          <div class="social-meta">
+            <span>{{ meal.calories }} kcal</span>
+            <span>{{ meal.protein_g }}g proteina</span>
+            <span>{{ meal.carbs_g }}g carbos</span>
+            <span>{{ meal.fat_g }}g grasas</span>
+          </div>
+          {% if meal.category %}
+          <div class="muted" style="margin-top:6px;">{{ meal.category.name }}</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {% if public_meal_plans %}
+    <div class="muted" style="margin: 8px 0 12px; font-weight:700; color:#f5f7fb;">Planes de comida públicos</div>
     <div class="social-list">
       {% for meal_plan in public_meal_plans %}
       <a class="social-card js-open-detail" href="#" data-detail-id="meal-{{ meal_plan.id }}">
@@ -329,20 +415,71 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">No hay planes de comida publicos disponibles.</div>
+    {% if not public_meals %}
+    <div class="empty-state">No hay comidas ni planes de comida publicos disponibles.</div>
+    {% endif %}
     {% endif %}
   </div>
 </section>
 
 <div style="display:none;">
+  {% for meal in public_meals %}
+  <div id="public-meal-{{ meal.id }}" class="detail-template">
+    <article class="detail-card">
+      <div class="detail-hero">
+        <div class="detail-thumb">
+          {% if meal.image %}
+          <img src="{{ meal.image.url }}" alt="{{ meal.name }}">
+          {% elif meal.image_url %}
+          <img src="{{ meal.image_url }}" alt="{{ meal.name }}">
+          {% else %}
+          🍽️
+          {% endif %}
+        </div>
+        <div>
+          <h4 class="detail-title">{{ meal.name }}</h4>
+          <div class="social-author">por {{ meal.user.username|default:"FITtrack" }}</div>
+          <div class="detail-metrics">
+            <span class="metric-pill">{{ meal.calories }} kcal</span>
+            <span class="metric-pill">{{ meal.protein_g }}g proteina</span>
+            <span class="metric-pill">{{ meal.carbs_g }}g carbos</span>
+            <span class="metric-pill">{{ meal.fat_g }}g grasas</span>
+          </div>
+        </div>
+      </div>
+      {% if meal.category %}
+      <p class="muted" style="margin-top:12px;">Categoria: {{ meal.category.name }}</p>
+      {% endif %}
+      {% if request.user.is_authenticated %}
+      <form class="save-form" method="post" action="{% url 'social-feed' %}">
+        {% csrf_token %}
+        <input type="hidden" name="meal_id" value="{{ meal.id }}">
+        <button type="submit" class="save-btn" {% if meal.id in saved_meal_ids %}disabled{% endif %}>
+          {% if meal.id in saved_meal_ids %}Ya guardada{% else %}Guardar en mi perfil{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="save-form">
+        <a class="quick-link primary" href="{% url 'auth-login' %}?next={% url 'social-feed' %}?tab=meals">Inicia sesion para guardar</a>
+      </div>
+      {% endif %}
+    </article>
+  </div>
+  {% endfor %}
+
   {% for meal_plan in public_meal_plans %}
   <div id="meal-{{ meal_plan.id }}" class="detail-template">
     <article class="detail-card">
-      <h4 class="detail-title">{{ meal_plan.name }}</h4>
-      <div class="social-author">Creado por {{ meal_plan.user.username }}</div>
-      <div class="social-meta">
-        <span>{{ meal_plan.items.count }} comidas</span>
-        <span>{{ meal_plan.total_calories }} kcal</span>
+      <div class="detail-hero">
+        <div class="detail-thumb">🍽️</div>
+        <div>
+          <h4 class="detail-title">{{ meal_plan.name }}</h4>
+          <div class="social-author">Creado por {{ meal_plan.user.username }}</div>
+          <div class="detail-metrics">
+            <span class="metric-pill">{{ meal_plan.items.count }} comidas</span>
+            <span class="metric-pill">{{ meal_plan.total_calories }} kcal</span>
+          </div>
+        </div>
       </div>
       {% if meal_plan.description %}
       <p class="muted" style="margin-top:8px;">{{ meal_plan.description }}</p>
@@ -417,16 +554,25 @@
   {% for exercise in public_exercises %}
   <div id="exercise-{{ exercise.id }}" class="detail-template">
     <article class="detail-card">
-      <h4 class="detail-title">{{ exercise.name }}</h4>
-      <div class="social-author">Creado por {{ exercise.user.username|default:"usuario" }}</div>
-      <div class="social-meta">
-        <span>{{ exercise.muscle_group }}</span>
-        <span>{{ exercise.type }}</span>
+      <div class="detail-hero">
+        <div class="detail-thumb">
+          {% if exercise.display_image_url %}
+          <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}">
+          {% else %}
+          💪
+          {% endif %}
+        </div>
+        <div>
+          <h4 class="detail-title">{{ exercise.name }}</h4>
+          <div class="social-author">Creado por {{ exercise.user.username|default:"usuario" }}</div>
+          <div class="detail-metrics">
+            <span class="metric-pill">{{ exercise.muscle_group }}</span>
+            {% if exercise.type %}<span class="metric-pill">{{ exercise.type }}</span>{% endif %}
+          </div>
+        </div>
       </div>
-      {% if exercise.display_image_url %}
-      <div style="margin-top: 12px;">
-        <img src="{{ exercise.display_image_url }}" alt="{{ exercise.name }}" style="width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
-      </div>
+      {% if exercise.description %}
+      <p class="muted" style="margin-top:12px;">{{ exercise.description|truncatewords:26 }}</p>
       {% endif %}
       {% if request.user.is_authenticated %}
       <form class="save-form" method="post" action="{% url 'social-feed' %}">

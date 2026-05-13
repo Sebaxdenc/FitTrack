@@ -9,6 +9,37 @@
     .app-shell {
         width: min(1040px, 100%);
     }
+
+    .profile-actions {
+        margin-top: 14px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .logout-form {
+        margin: 0;
+    }
+
+    .logout-button {
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        color: #f5f7fb;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .logout-button:hover {
+        border-color: rgba(255, 143, 96, 0.65);
+        color: #ff8f60;
+    }
 </style>
 {% endblock %}
 
@@ -30,7 +61,13 @@
             </div>
             {% endif %}
         </div>
-        <p style="margin-top:10px;"><a href="{% url 'dashboard-home' %}">← Volver al inicio</a></p>
+        <div class="profile-actions">
+            <a href="{% url 'dashboard-home' %}" class="logout-button">← Volver al inicio</a>
+            <form class="logout-form" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Cerrar sesión</button>
+            </form>
+        </div>
     </section>
 
     <!-- ── KPIs ── -->

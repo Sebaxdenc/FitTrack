@@ -1,5 +1,5 @@
 """
-Comando de Django para generar imágenes de comidas usando la API de Google Gemini.
+Comando de Django para generar imágenes de comidas usando la API de Hugging Face.
 
 Uso:
     python manage.py generate_meal_images
@@ -9,37 +9,34 @@ Uso:
 
 Requiere:
     - pip install requests python-dotenv
-    - Variable GEMINI_API_KEY en gemini.env (raíz del proyecto)
+    - Variable HUGGINGFACE_API_TOKEN o HF_TOKEN en .env (raíz del proyecto)
 """
 
 import os
-import base64
 import requests
 
 from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from dotenv import load_dotenv
 
 from workouts.models import Meal
 
 
 class Command(BaseCommand):
-    help = "Genera imágenes para las comidas usando la API de Google Gemini"
+    help = "Genera imágenes para las comidas usando la API de Hugging Face"
 
     def handle(self, *args, **kwargs):
-        # Cargar clave de API
-        load_dotenv("gemini.env")
-        load_dotenv("../gemini.env")
+        load_dotenv(".env")
+        load_dotenv("../.env")
 
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        hf_token = os.environ.get("HUGGINGFACE_API_TOKEN") or os.environ.get("HF_TOKEN")
+        if not hf_token:
             self.stderr.write(self.style.ERROR(
-                "No se encontro GEMINI_API_KEY. "
-                "Crea el archivo gemini.env con: GEMINI_API_KEY=tu_clave"
+                "No se encontro HUGGINGFACE_API_TOKEN ni HF_TOKEN. "
+                "Agrega una de esas variables en tu .env"
             ))
             return
-
-        images_folder = "media/meals/"
-        os.makedirs(images_folder, exist_ok=True)
 
         meals = Meal.objects.all()
         self.stdout.write(f"Se encontraron {meals.count()} comidas en la base de datos.")
@@ -53,7 +50,7 @@ class Command(BaseCommand):
 
             try:
                 image_relative_path = self.generate_and_download_image(
-                    api_key, meal.name, images_folder
+                    hf_token, meal.name
                 )
                 meal.image = image_relative_path
                 meal.save()
@@ -70,44 +67,37 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Proceso finalizado."))
 
-    def generate_and_download_image(self, api_key: str, meal_name: str, save_folder: str) -> str:
+    def generate_and_download_image(self, hf_token: str, meal_name: str) -> str:
         prompt = (
             f"High quality food photography of '{meal_name}', "
             "served on a clean white plate, professional studio lighting, "
             "top-down view, appetizing, vibrant colors, no text."
         )
 
-        url = (
-            "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-2.5-flash-image:generateContent?key={api_key}"
+        model_name = os.environ.get(
+            "HUGGINGFACE_IMAGE_MODEL",
+            "black-forest-labs/FLUX.1-schnell",
         )
-
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+        url = f"https://router.huggingface.co/hf-inference/models/{model_name}"
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Accept": "image/png",
+            "Content-Type": "application/json",
         }
+        payload = {"inputs": prompt}
 
-        response = requests.post(url, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
+        response = requests.post(url, headers=headers, json=payload, timeout=120)
+        if response.status_code >= 400:
+            raise ValueError(f"Hugging Face devolvio {response.status_code}: {response.text[:300]}")
 
-        parts = data["candidates"][0]["content"]["parts"]
-        image_b64 = None
-        for part in parts:
-            if "inlineData" in part:
-                image_b64 = part["inlineData"]["data"]
-    
-
-        if not image_b64:
-            raise ValueError("La API no devolvio ninguna imagen en la respuesta.")
-
-        image_bytes = base64.b64decode(image_b64)
+        content_type = response.headers.get("Content-Type", "")
+        if "image" not in content_type.lower():
+            raise ValueError(f"Hugging Face no devolvio una imagen valida: {response.text[:300]}")
 
         safe_name = meal_name.replace(" ", "_").replace("/", "-")
         image_filename = f"m_{safe_name}.png"
-        image_path_full = os.path.join(save_folder, image_filename)
+        image_path = os.path.join("meals", image_filename)
 
-        with open(image_path_full, "wb") as f:
-            f.write(image_bytes)
+        saved_path = default_storage.save(image_path, ContentFile(response.content))
 
-        return os.path.join("meals", image_filename)
+        return saved_path

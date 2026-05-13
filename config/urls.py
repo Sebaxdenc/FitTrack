@@ -27,6 +27,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(("workouts.urls", "workouts_api"), namespace="api")),
     path("login/", auth_views.LoginView.as_view(template_name="auth/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(next_page="landing"), name="logout"),
 ]
 
 if settings.DEBUG:

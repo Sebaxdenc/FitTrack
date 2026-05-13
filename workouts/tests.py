@@ -56,6 +56,31 @@ class ExerciseCreationTests(TestCase):
         self.assertEqual(exercise.image_url, "")
         self.assertTrue(exercise.display_image_url.startswith("/media/exercise-equipment/"))
 
+    @patch("workouts.exercise_image_generation.default_storage.save")
+    @patch("workouts.exercise_image_generation.requests.post")
+    def test_user_can_create_exercise_and_generate_ai_image(self, requests_post_mock, storage_save_mock):
+        storage_save_mock.return_value = "exercises/e_press_militar.png"
+        requests_post_mock.return_value.status_code = 200
+        requests_post_mock.return_value.headers = {"Content-Type": "image/png"}
+        requests_post_mock.return_value.content = TEST_GIF_BYTES
+        requests_post_mock.return_value.raise_for_status.return_value = None
+
+        response = self.client.post(
+            reverse("routine-exercise-list"),
+            {
+                "name": "Press militar",
+                "muscle_group": "Hombros",
+                "description": "Ejercicio de empuje para fortalecer hombros y triceps.",
+                "image_url": "",
+                "equipment_photo": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("routine-exercise-list"))
+        exercise = Exercise.objects.get(name="Press militar")
+        self.assertEqual(exercise.equipment_photo.name, "exercises/e_press_militar.png")
+        self.assertTrue(exercise.display_image_url.startswith("/media/exercises/"))
+
     @patch("workouts.frontend_views.generate_exercise_description")
     def test_generate_description_endpoint_returns_ai_text(self, generate_description_mock):
         generate_description_mock.return_value = (

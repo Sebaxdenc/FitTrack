@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FITtrack | Seleccionar rutina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0c1016; --muted:#9aa3b5; --accent:#21e36b; --card:rgba(255,255,255,0.04); --shadow:0 18px 40px rgba(0,0,0,0.35); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:'Manrope',system-ui,sans-serif; background:radial-gradient(120% 120% at 20% 20%, rgba(0,196,255,.12), transparent 45%), radial-gradient(120% 120% at 80% 0%, rgba(33,227,107,.12), transparent 40%), var(--bg); color:#f5f7fb; padding:28px 16px 96px; }
+    .shell { width:min(640px,100%); margin:0 auto; }
+    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:20px; box-shadow:var(--shadow); padding:20px; margin-bottom:16px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
+    .brand { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; }
+    .brand span { color:var(--accent); }
+    .muted { color:var(--muted); }
+    .messages { margin-bottom:14px; display:grid; gap:8px; }
+    .message { padding:10px 12px; border-radius:12px; font-size:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
+    .routine-grid { display:grid; gap:12px; }
+    .routine-card { background:#101722; border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; cursor:pointer; transition:all 0.2s ease; }
+    .routine-card:hover { border-color:rgba(33,227,107,.4); box-shadow:0 0 12px rgba(33,227,107,.08); }
+    .routine-card.selected { border-color:var(--accent); background:rgba(33,227,107,.08); }
+    .routine-name { font-size:17px; font-weight:800; margin:0 0 8px; }
+    .routine-goal { color:var(--muted); margin:0; }
+    .routine-exercises { color:var(--muted); font-size:13px; margin-top:10px; }
+    .button-group { display:flex; gap:12px; margin-top:20px; }
+    .btn { border:none; border-radius:14px; cursor:pointer; padding:12px 16px; font-weight:800; background:linear-gradient(120deg, #21e36b, #00c4ff); color:#0c1016; }
+    .btn-secondary { background:#0f141c; color:#f5f7fb; border:1px solid rgba(255,255,255,.1); }
+    .empty-state { padding:20px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); color:var(--muted); background:rgba(255,255,255,.02); }
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0b0f15;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px 12px;
+      z-index: 50;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .nav-item {
+      color: #9aa3b5;
+      text-decoration: none;
+      font-size: 12px;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+    }
+    .nav-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <div class="brand"><span>FIT</span>track</div>
+        <div class="muted">Selecciona una rutina para el {{ day_label }}</div>
+      </div>
+      <a href="{% url 'dashboard-home' %}" style="color:#f5f7fb;text-decoration:none;">Volver</a>
+    </section>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <form method="post" class="card">
+      {% csrf_token %}
+      <input type="hidden" id="routine_id_input" name="routine_id" value="">
+      
+      <h2>Tus rutinas</h2>
+      <p class="muted">Haz clic en una rutina para seleccionarla. Si deseas remover la rutina de este día, déjalo sin seleccionar.</p>
+      <a href="{% url 'routine-create' %}" class="btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:16px;">+ Crear nueva rutina</a>
+      
+      {% if routines %}
+        <div class="routine-grid">
+          {% for routine in routines %}
+            <label class="routine-card" onclick="selectRoutine(this, {{ routine.id }})">
+              <p class="routine-name">{{ routine.name }}</p>
+              <p class="routine-goal">{{ routine.goal|default:"Sin objetivo específico" }}</p>
+              <p class="routine-exercises">{{ routine.exercises.count }} ejercicio{{ routine.exercises.count|pluralize }}</p>
+              {% if current_routine.id == routine.id %}
+                <p style="color:var(--accent);font-weight:700;margin-top:8px;">✓ Asignada para este día</p>
+              {% endif %}
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">No tienes rutinas creadas. Crea una rutina primero para poder asignarla a este día.</div>
+      {% endif %}
+      
+      <div class="button-group">
+        <button class="btn" type="submit">Guardar</button>
+        <a href="{% url 'dashboard-home' %}" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Cancelar</a>
+      </div>
+    </form>
+  </main>
+  {% include "dashboard/partials/bottom_nav.html" %}
+  <script>
+    function selectRoutine(element, routineId) {
+      // Deselect all routine cards
+      document.querySelectorAll('.routine-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Select the clicked routine card
+      element.classList.add('selected');
+      
+      // Update the hidden input
+      document.getElementById('routine_id_input').value = routineId;
+    }
+    
+    // Check if a routine was already selected (for edit mode)
+    {% if current_routine %}
+      const currentRoutineCard = document.querySelector('.routine-card[onclick*="{{ current_routine.id }}"]');
+      if (currentRoutineCard) {
+        currentRoutineCard.classList.add('selected');
+        document.getElementById('routine_id_input').value = {{ current_routine.id }};
+      }
+    {% endif %}
+  </script>
+</body>
+</html>

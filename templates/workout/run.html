@@ -1,0 +1,443 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Ejecutar Rutina{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+      --bg: #0c1016;
+      --muted: #9aa3b5;
+      --accent: #21e36b;
+      --card: rgba(255, 255, 255, 0.04);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .runner-container {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+  }
+
+  .section-card {
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: var(--shadow);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 18px;
+  }
+
+  .exercise-header {
+      margin-bottom: 18px;
+  }
+
+  .exercise-header h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f5f7fb;
+      margin: 0 0 4px 0;
+  }
+
+  .exercise-header .muted {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0;
+  }
+
+  .exercise-image-container {
+      background: #0f141c;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      min-height: 240px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      margin-bottom: 18px;
+  }
+
+  .exercise-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+  }
+
+  .exercise-image-placeholder {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+  }
+
+  .exercise-info {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .info-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+  }
+
+  .info-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+  }
+
+  .info-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f5f7fb;
+  }
+
+  .exercise-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+  }
+
+  .sets-section {
+      margin-bottom: 22px;
+  }
+
+  .sets-title {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+  }
+
+  .sets-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+  }
+
+  .set-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+  }
+
+  .set-number {
+      min-width: 60px;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 13px;
+  }
+
+  .set-progress {
+      flex: 1;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .set-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #1fa851);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+  }
+
+      .set-progress-bar.is-completed {
+      width: 100%;
+  }
+
+      .set-progress-bar.is-current {
+        width: 0%;
+      }
+
+  .set-progress-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f5f7fb;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+  }
+
+  .set-progress-bar.completed .set-progress-text {
+      opacity: 1;
+  }
+
+  .timer-section {
+      background: linear-gradient(135deg, rgba(33, 227, 107, 0.1), rgba(33, 227, 107, 0.05));
+      border: 1px solid rgba(33, 227, 107, 0.2);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 22px;
+      text-align: center;
+  }
+
+  .timer-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+  }
+
+  .timer-display {
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: 'Space Grotesk', monospace;
+      letter-spacing: 2px;
+  }
+
+    .timer-section.is-hidden {
+      display: none;
+    }
+
+  .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  .btn {
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 0;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+  }
+
+  .btn:hover {
+      background: #1fa851;
+      transform: scale(1.01);
+  }
+
+  .btn:active {
+      transform: scale(0.98);
+  }
+
+  .btn.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f7fb;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .btn.secondary:active {
+      background: rgba(255, 255, 255, 0.1);
+  }
+
+  .progress-header {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  }
+
+  .progress-header strong {
+      color: #f5f7fb;
+  }
+
+    .completed-pulse {
+      animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+  a.btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="runner-container">
+  <div class="section-card">
+    <div class="exercise-header">
+      <h2>{{ routine.name }}</h2>
+      <p class="muted">{{ routine.goal }}</p>
+    </div>
+
+    <div class="progress-header">
+      <span>Ejercicio {{ current_index_plus_one }} de {{ total_exercises }}</span>
+    </div>
+
+    <!-- Exercise Image -->
+    <div class="exercise-image-container">
+      {% if current_exercise.exercise.display_image_url %}
+        <img src="{{ current_exercise.exercise.display_image_url }}" alt="{{ current_exercise.exercise.name }}">
+      {% else %}
+        <div class="exercise-image-placeholder">📸 Sin imagen</div>
+      {% endif %}
+    </div>
+
+    <!-- Exercise Name -->
+    <div class="exercise-name">{{ current_exercise.exercise.name }}</div>
+
+    <!-- Exercise Info -->
+    <div class="exercise-info">
+      <div class="info-row">
+        <span class="info-label">Descripción</span>
+        <span class="info-value" style="font-size: 14px; font-weight: 400;">{{ current_exercise.exercise.description|truncatewords:20 }}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+        <div class="info-row">
+          <span class="info-label">Series</span>
+          <span class="info-value">{{ current_exercise.target_sets }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Repeticiones</span>
+          <span class="info-value">{{ current_exercise.target_reps }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Descanso</span>
+          <span class="info-value">{{ current_exercise.rest_seconds }}s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sets Progress -->
+    <div class="sets-section">
+      <div class="sets-title">Progreso de series</div>
+      <div class="sets-container">
+        {% for s in range_current_sets %}
+          <div class="set-item">
+            <div class="set-number">Serie {{ s }}</div>
+            <div class="set-progress">
+              <div class="set-progress-bar {% if s <= completed_sets %}is-completed{% elif s == completed_sets|add:1 %}is-current{% endif %}" data-set-index="{{ s }}">
+                <span class="set-progress-text">✓</span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-section" id="timer-section">
+      <div class="timer-label">Tiempo de descanso</div>
+      <div class="timer-display" id="timer">00:00</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="complete-set" class="btn">Completar serie</button>
+      <button id="skip-rest" class="btn secondary">Saltar descanso</button>
+      <a href="{% url 'dashboard-home' %}" class="btn secondary">Salir</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+  const restSeconds = {{ current_exercise.rest_seconds }};
+  let remaining = restSeconds;
+  const timerEl = document.getElementById('timer');
+  const timerSectionEl = document.getElementById('timer-section');
+  const completeBtn = document.getElementById('complete-set');
+  const skipBtn = document.getElementById('skip-rest');
+  const currentBar = document.querySelector('.set-progress-bar.is-current');
+  const totalSeconds = Math.max(restSeconds, 1);
+  let timerHidden = false;
+
+  const format = (s) => {
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    return `${mm}:${ss}`;
+  }
+
+  const syncCurrentProgress = () => {
+    if (!currentBar || timerHidden) return;
+    const elapsed = totalSeconds - remaining;
+    const percent = Math.max(0, Math.min(100, (elapsed / totalSeconds) * 100));
+    currentBar.style.width = `${percent}%`;
+  };
+
+  const hideTimerIfDone = () => {
+    if (!timerHidden && remaining <= 0 && timerSectionEl) {
+      timerHidden = true;
+      timerSectionEl.classList.add('is-hidden');
+    }
+  };
+
+  let interval = setInterval(() => {
+    if (remaining <= 0) {
+      hideTimerIfDone();
+      return;
+    }
+    remaining -= 1;
+    timerEl.textContent = format(remaining);
+    syncCurrentProgress();
+    hideTimerIfDone();
+  }, 1000);
+
+  timerEl.textContent = format(remaining);
+  syncCurrentProgress();
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  completeBtn.addEventListener('click', async () => {
+    completeBtn.disabled = true;
+    try {
+      const csrftoken = getCookie('csrftoken');
+      const resp = await fetch(location.pathname + 'complete-set/', { method: 'POST', headers: {'X-CSRFToken': csrftoken, 'Accept': 'application/json'} });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.finished) {
+          window.location.href = '{% url "dashboard-home" %}';
+          return;
+        }
+        window.location.reload();
+      } else {
+        completeBtn.disabled = false;
+        alert('No se pudo completar la serie');
+      }
+    } catch (e) {
+      completeBtn.disabled = false;
+      alert('Error de red');
+    }
+  });
+
+  skipBtn.addEventListener('click', () => { remaining = 0; timerEl.textContent = format(0); syncCurrentProgress(); hideTimerIfDone(); });
+})();
+</script>
+{% endblock %}
+
